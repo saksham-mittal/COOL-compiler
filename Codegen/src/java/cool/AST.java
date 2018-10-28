@@ -434,7 +434,7 @@ public class AST{
 		}
 	}
 	public static class program extends ASTNode {
-		public List<class_> classes;
+		public static List<class_> classes;
 		public program(List<class_> c, int l){
 			classes = c;
 			lineNo = l;

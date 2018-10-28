@@ -84,8 +84,13 @@ public class SemanticTest {
 			return;
 		}
 		Semantic semanticAnalyzer=new Semantic(prog.value);
+		
 		if (semanticAnalyzer.getErrorFlag()){
-			System.err.println("Compilation halted due to semantic errors.");
+			System.err.println("Compilation halter due to semantic errors.");
+			return;
+		}
+		if (ReportError.ef){
+			System.err.println("Compilation halter due to semantic errors.");
 			return;
 		}
 		System.out.println(prog.value.getString(""));
