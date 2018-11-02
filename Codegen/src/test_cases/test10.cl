@@ -8,6 +8,7 @@ class Main {
 class A {
     a : Int;
     b : Int;
+    c : String;
     foo() : Int {
         let x : Int <- 5 in {
             a <- a + x;

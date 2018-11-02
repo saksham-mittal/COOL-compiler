@@ -1,6 +1,7 @@
 ; I am a comment in LLVM-IR. Feel free to remove me.
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-unknown-linux-gnu"
+
 @Abortdivby0 = private unnamed_addr constant [22 x i8] c"Error: Division by 0\0A\00", align 1
 @Abortdispvoid = private unnamed_addr constant [25 x i8] c"Error: Dispatch on void\0A\00", align 1
 
@@ -15,4 +16,144 @@ declare i8* @malloc(i64)
 declare void @exit(i32)
 @strformatstr = private unnamed_addr constant [3 x i8] c"%s\00", align 1
 @intformatstr = private unnamed_addr constant [3 x i8] c"%d\00", align 1
+
+%class.Object.Base = type { }
+%class.Object = type { i32, i8*, %class.Object.Base }
+%class.IO.Base = type {%class.Object.Base* }
+%class.IO = type { i32, i8*, %class.IO.Base }
+%class.Int.Base = type { }
+%class.Int = type { i32, i8*, %class.Int.Base }
+%class.String.Base = type { }
+%class.String = type { i32, i8*, %class.String.Base }
+%class.Bool.Base = type { }
+%class.Bool = type { i32, i8*, %class.Bool.Base }
+%class.Main.Base = type {%class.Object.Base* }
+%class.Main = type { i32, i8*, %class.Main.Base }
+%class.A.Base = type {%class.Object.Base*, %class.Int*, %class.Int*, %class.String* }
+%class.A = type { i32, i8*, %class.A.Base }
+
+
+@_ZTV6Object = constant [3 x i8*] [i8* bitcast (%class.Object* ( %class.Object* )* @_ZN6Object5abort to i8*), i8* bitcast ([1024 x i8]* ( %class.Object* )* @_ZN6Object9type_name to i8*), i8* bitcast (i8 ( %class.Object* )* @_ZN6Object4copy to i8*)] 
+@_ZTV2IO = constant [7 x i8*] [i8* bitcast (%class.Object* ( %class.Object* )* @_ZN6Object5abort to i8*), i8* bitcast ([1024 x i8]* ( %class.Object* )* @_ZN6Object9type_name to i8*), i8* bitcast (%class.IO* ( %class.IO* )* @_ZN2IO4copy to i8*), i8* bitcast (%class.IO* ( %class.IO*, [1024 x i8]* )* @_ZN2IO10out_string to i8*), i8* bitcast (%class.IO* ( %class.IO*, i32 )* @_ZN2IO7out_int to i8*), i8* bitcast ([1024 x i8]* ( %class.IO* )* @_ZN2IO9in_string to i8*), i8* bitcast (i32 ( %class.IO* )* @_ZN2IO9in_int to i8*)] 
+@_ZTV3Int = constant [3 x i8*] [i8* bitcast (%class.Object* ( %class.Object* )* @_ZN6Object5abort to i8*), i8* bitcast ([1024 x i8]* ( %class.Object* )* @_ZN6Object9type_name to i8*), i8* bitcast (i8 ( %class.Object* )* @_ZN3Int4copy to i8*)] 
+@_ZTV6String = constant [6 x i8*] [i8* bitcast (%class.Object* ( %class.Object* )* @_ZN6Object5abort to i8*), i8* bitcast ([1024 x i8]* ( %class.Object* )* @_ZN6Object9type_name to i8*), i8* bitcast ([1024 x i8]* ( [1024 x i8]* )* @_ZN6String4copy to i8*), i8* bitcast (i32 ( [1024 x i8]* )* @_ZN6String6length to i8*), i8* bitcast ([1024 x i8]* ( [1024 x i8]*, [1024 x i8]* )* @_ZN6String6concat to i8*), i8* bitcast ([1024 x i8]* ( %class.IO*, [1024 x i8]* )* @_ZN6String6substr to i8*)] 
+@_ZTV4Bool = constant [3 x i8*] [i8* bitcast (%class.Object* ( %class.Object* )* @_ZN6Object5abort to i8*), i8* bitcast ([1024 x i8]* ( %class.Object* )* @_ZN6Object9type_name to i8*), i8* bitcast (i8 ( %class.Object* )* @_ZN4Bool4copy to i8*)] 
+@_ZTV4Main = constant [4 x i8*] [i8* bitcast (%class.Object* ( %class.Object* )* @_ZN6Object5abort to i8*), i8* bitcast ([1024 x i8]* ( %class.Object* )* @_ZN6Object9type_name to i8*), i8* bitcast (i8 ( %class.Object* )* @_ZN4Main4copy to i8*), i8* bitcast (%class.Int* (  )* @_ZN4Main4main to i8*)] 
+@_ZTV1A = constant [4 x i8*] [i8* bitcast (%class.Object* ( %class.Object* )* @_ZN6Object5abort to i8*), i8* bitcast ([1024 x i8]* ( %class.Object* )* @_ZN6Object9type_name to i8*), i8* bitcast (i8 ( %class.Object* )* @_ZN1A4copy to i8*), i8* bitcast (%class.Int* (  )* @_ZN1A3foo to i8*)] 
+
+
+define %classObject* @_ZN6Object5abort( %class.Object* %this ) noreturn {
+entry:
+	call void @exit( i32 1 )
+	ret %classObject* null
+}
+
+define void @_Z6ObjectBaseC ( %class.Object.Base ) {
+entry:
+	ret void
+}
+
+define [1024 x i8]* @_ZN6Object9type_name( %class.Object* %this ) {
+entry:
+	%0 = getelementptr inbounds %classObject, %classObject* %this, i32 0, i32 0
+	%1 = load i32, i32* %0
+	%2 = getelementptr inbounds [8 x [1024 x i8]], [8 x [1024 x i8]]* @classnames, i32 0, i32 %1
+	%retval = call [1024 x i8]* @_ZN6String4copy( [1024 x i8]* %2 )
+	ret [1024 x i8]* %retval
+}
+
+define %classIO* @_ZN2IO10out_string( %class.IO* %this, [1024 x i8]* %str ) {
+entry:
+	%0 = call i32 (i8*, ...) @printf( i8* bitcast ( [3 x i8]* @strformatstr to i8* ), [1024 x i8]* %str )
+	ret %classIO* %this
+}
+
+define %classIO* @_ZN2IO7out_int( %class.IO* %this, i32 %int ) {
+entry:
+	%0 = call i32 (i8*, ...) @printf( i8* bitcast ( [3 x i8]* @intformatstr to i8* ), i32 %int )
+	ret %classIO* %this
+}
+
+define [1024 x i8]* @_ZN2IO9in_string( %class.IO* %this ) {
+entry:
+	%0 = call i8* @malloc( i64 1024 )
+	%retval = bitcast i8* %0 to [1024 x i8]*
+	%1 = call i32 (i8*, ...) @scanf( i8* bitcast ( [3 x i8]* @strformatstr to i8* ), [1024 x i8]* %retval )
+	ret [1024 x i8]* %retval
+}
+
+define i32 @_ZN2IO6in_int( %class.IO* %this ) {
+entry:
+	%0 = call i8* @malloc( i64 4 )
+	%1 = bitcast i8* %0 to i32*
+	%2 = call i32 (i8*, ...) @scanf( i8* bitcast ( [3 x i8]* @intformatstr to i8* ), i32* %1 )
+	%retval = load i32, i32* %1
+	ret i32 %retval
+}
+
+define void @_Z2IOBaseC ( %IO.Base*%this) { 
+entry: 
+	%0 = getelementptr inbounds %class.Object.Base.Base, class.Object.Base.Base* %this, i32 0, i32 0
+	call void @_Z11Object.BaseBaseC( %class.Object.Base.Base*%0)
+	ret void
+}
+
+define [1024 x i8]* @_ZN6String6concat( [1024 x i8]* %this, [1024 x i8]* %that ) {
+entry:
+	%retval = call [1024 x i8]* @_ZN6String4copy( [1024 x i8]* %this )
+	%0 = bitcast [1024 x i8]* %retval to i8*
+	%1 = bitcast [1024 x i8]* %that to i8*
+	%2 = call i8* @strcat( i8* %0, i8* %1 )
+	ret [1024 x i8]* %retval
+}
+
+define [1024 x i8]* @_ZN6String4copy( [1024 x i8]* %this ) {
+entry:
+	%0 = call i8* @malloc( i64 1024 )
+	%retval = bitcast i8* %0 to [1024 x i8]*
+	%1 = bitcast [1024 x i8]* %this to i8*
+	%2 = bitcast [1024 x i8]* %retval to i8*
+	%3 = call i8* @strcpy( i8* %2, i8* %1)
+	ret [1024 x i8]* %retval
+}
+
+define i32 @_ZN6String6length( [1024 x i8]* %this ) {
+entry:
+%0 = bitcast [1024 x i8]* %this to i8*
+	%1 = call i64 @strlen( i8* %0 )
+	%retval = trunc i64 %1 to i32
+	ret i32 %retval
+}
+
+define [1024 x i8]* @_ZN6String6substr( [1024 x i8]* %this, i32 %start, i32 %len ) {
+entry:
+	%0 = getelementptr inbounds [1024 x i8], [1024 x i8]* %this, i32 0, i32 %start
+	%1 = call i8* @malloc( i64 1024 )
+	%retval = bitcast i8* %1 to [1024 x i8]*
+	%2 = bitcast [1024 x i8]* %retval to i8*
+	%3 = call i8* @strncpy( i8* %2, i8* %0, i32 %len )
+	%4 = getelementptr inbounds [1024 x i8], [1024 x i8]* %retval, i32 0, i32 %len
+	store i8 0, i8* %4
+	ret [1024 x i8]* %retval
+}
+
+define void @_Z4MainBaseC ( %Main.Base*%this) { 
+entry: 
+	%0 = getelementptr inbounds %class.Object.Base.Base, class.Object.Base.Base* %this, i32 0, i32 0
+	call void @_Z11Object.BaseBaseC( %class.Object.Base.Base*%0)
+	ret void
+}
+
+define void @_Z1ABaseC ( %A.Base*%this) { 
+entry: 
+	%0 = getelementptr inbounds %class.Object.Base.Base, class.Object.Base.Base* %this, i32 0, i32 0
+	call void @_Z11Object.BaseBaseC( %class.Object.Base.Base*%0)
+	%1 = getelementptr inbounds %class.Int.Base, class.Int.Base* %this, i32 0, i32 1
+	call void @_Z3IntBaseC( %class.Int.Base*%1)
+	%2 = getelementptr inbounds %class.Int.Base, class.Int.Base* %this, i32 0, i32 2
+	call void @_Z3IntBaseC( %class.Int.Base*%2)
+	%3 = getelementptr inbounds %class.String.Base, class.String.Base* %this, i32 0, i32 3
+	call void @_Z6StringBaseC( %class.String.Base*%3)
+	ret void
+}
 

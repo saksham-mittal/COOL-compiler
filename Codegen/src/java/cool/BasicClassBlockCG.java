@@ -40,20 +40,20 @@ public class BasicClassBlockCG {
         mthdList = new HashMap<String, AST.method>();
         mthdList.putAll(mlist);
 
-        aOffset = new HashMap<String, Integer>();
-        aOffset.putAll(attrOffset);
+        attrOffset = new HashMap<String, Integer>();
+        attrOffset.putAll(aOffset);
 
-        mOffset = new HashMap<String, Integer>();
-        mOffset.putAll(mthdOffset);
+        mthdOffset = new HashMap<String, Integer>();
+        mthdOffset.putAll(mOffset);
 
-        parentAttrList = new ArrayList<AST.attr>();
-        parentAttrList.addAll(paList);
+        paList = new ArrayList<AST.attr>();
+        paList.addAll(parentAttrList);
 
-        parentMthdList = new ArrayList<AST.attr>();
-        parentMthdList.addAll(pmList);
+        pmList = new ArrayList<AST.method>();
+        pmList.addAll(parentMthdList);
 
-        llIrNameList = new HashMap<String, String>();
-        llIrNameList.putAll(llvmIrName);
+        llvmIrName = new HashMap<String, String>();
+        llvmIrName.putAll(llIrNameList);
     }
     
 }

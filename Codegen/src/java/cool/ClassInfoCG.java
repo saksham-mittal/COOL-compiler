@@ -6,6 +6,8 @@ import java.util.Map.Entry;
 
 import cool.AST;
 import cool.BasicClassBlock;
+import cool.BasicClassBlockCG;
+import cool.AST.attr;
 
 public class ClassInfoCG {
     // For reporting error
@@ -21,7 +23,7 @@ public class ClassInfoCG {
         // Instansiating cls 
         cls = new HashMap<String, BasicClassBlockCG>();
         classDepth = new HashMap<String, Integer>();
-        reportError = new ReportError();
+        // reportError = new ReportError();
 
         /*
         Object has methods:
@@ -54,9 +56,9 @@ public class ClassInfoCG {
 
         // Mapping of the Object class method's to the llmv ir's naming format
         HashMap<String, String> objectLlvmIrNameMap = new HashMap<String, String>();
-        llvmIrNameMap.put("abort", "@_ZN6Object5abort"); 
-        llvmIrNameMap.put("type_name", "@_ZN6Object9type_name"); 
-        llvmIrNameMap.put("copy", "@_ZN6Object4copy"); 
+        objectLlvmIrNameMap.put("abort", "@_ZN6Object5abort"); 
+        objectLlvmIrNameMap.put("type_name", "@_ZN6Object9type_name"); 
+        objectLlvmIrNameMap.put("copy", "@_ZN6Object4copy"); 
 
         // Adding the Object class to the cls(Class HashMap)
         cls.put("Object", new BasicClassBlockCG("Object", null, new HashMap<String, AST.attr>(), objectMethods,
@@ -93,7 +95,7 @@ public class ClassInfoCG {
         IOMethods.put("in_int", new AST.method("in_int", ioFormals, "Int", new AST.no_expr(0), 0));
 
         ArrayList<AST.method> ioMethodList = new ArrayList<AST.method>();
-        ioMethodList.putAll(objectMethodList);
+        ioMethodList.addAll(objectMethodList);
         ioMethodList.add(new AST.method("out_string", stringFormals, "IO", new AST.no_expr(0), 0));
         ioMethodList.add(new AST.method("out_int", intFormals, "IO", new AST.no_expr(0), 0));
         ioMethodList.add(new AST.method("in_string", ioFormals, "String", new AST.no_expr(0), 0));
@@ -148,8 +150,8 @@ public class ClassInfoCG {
         */
 
         // Adding the Bool class to the cls(Class HashMap)
-        cls.put("Bool", new BasicClassBlock("Bool", "Object", new HashMap<String, AST.attr>(), new HashMap<String, AST.method>()),
-                new HashMap<String, Integer>(), objectMethodOffset, new ArrayList<AST.attr>(), objectMethodList, objectLlvmIrNameMap);
+        cls.put("Bool", new BasicClassBlockCG("Bool", "Object", new HashMap<String, AST.attr>(), new HashMap<String, AST.method>(),
+                new HashMap<String, Integer>(), objectMethodOffset, new ArrayList<AST.attr>(), objectMethodList, objectLlvmIrNameMap));
         // Since Bool class inherits from Object class
         cls.get("Bool").mthdList.putAll(objectMethods);
         // Bool class is at depth 1
@@ -185,7 +187,7 @@ public class ClassInfoCG {
         stringMethods.put("substr", new AST.method("substr", stringFormals, "String", new AST.no_expr(0), 0));
 
         ArrayList<AST.method> stringMethodList = new ArrayList<AST.method>();
-        stringMethodList.putAll(objectMethodList);
+        stringMethodList.addAll(objectMethodList);
         stringMethodList.add(new AST.method("length", strFormal, "Int", new AST.no_expr(0), 0));
         stringMethodList.add(new AST.method("concat", concatFormals, "String", new AST.no_expr(0), 0));
         stringMethodList.add(new AST.method("substr", stringFormals, "String", new AST.no_expr(0), 0));
@@ -211,7 +213,7 @@ public class ClassInfoCG {
 
 
         // Adding the String class to the cls(Class HashMap)
-        cls.put("String", new BasicClassBlock("String", "Object", new HashMap<String, AST.attr>(), stringMethods, new HashMap<String, Integer>(),
+        cls.put("String", new BasicClassBlockCG("String", "Object", new HashMap<String, AST.attr>(), stringMethods, new HashMap<String, Integer>(),
                 stringMethodOffset, new ArrayList<AST.attr>(), stringMethodList, stringLlvmIrNameMap));
         // Since String class inherits from Object class
         cls.get("String").mthdList.putAll(objectMethods);
@@ -220,87 +222,53 @@ public class ClassInfoCG {
         cls.get("String").llvmIrName.put("copy", "@_ZN6String4copy");
     }
 
-    // This function checks for multiple attribute and method definitions in the class
-    public void checkAttrMthd(AST.class_ cl, HashMap<String, AST.attr> al, HashMap<String, AST.method> ml) {
+    // This method checks for redefintions of inherited attributes and methods in the class
+    public void putAttrMthdInherited(AST.class_ cl, BasicClassBlockCG cb, HashMap<String, AST.method> ml) {
+    
+        // Initialize with 1 since __Base is already added
+        int attr_offset = 1;
+
+        // This loop is for adding attribute list and method list
         for(AST.feature ft : cl.features) {
             if(ft.getClass() == AST.attr.class) {
-                AST.attr attrNew = (AST.attr) ft;
-
-                if(al.containsKey(attrNew.name)) {
-                    // Means the attribute is already error
-                    reportError.report(cl.filename, attrNew.lineNo, "Attribute '" + attrNew.name + "' is defined more than once.");
-                } else {
-                    // else adding the attribute to the list
-                    al.put(attrNew.name, attrNew);
-                }
-            } else if(ft.getClass() == AST.method.class) {
-                AST.method mthdNew = (AST.method) ft;
-                if(ml.containsKey(mthdNew.name)) {
-                    // Means method is already present
-                    reportError.report(cl.filename, mthdNew.lineNo, "Method '" + mthdNew.name + "' is defined more than once.");
-                } else {
-                    // else adding tht method to the list
-                    ml.put(mthdNew.name, mthdNew);
-                }
+                // If the feature is an attribute
+                // typecasting
+                AST.attr att = (AST.attr) ft;
+                // Adding the attribute to that classes attribute list
+                cb.paList.add(att);
+                cb.attrOffset.put(att.name , attr_offset);
+                // Incrementing the offset value for next attribute 
+                attr_offset++;
             }
-        }
-    }
-
-    // This method checks for redefintions of inherited attributes and methods in the class
-    public void checkAttrMthdInherited(AST.class_ cl, BasicClassBlock cb, HashMap<String, AST.attr> al, HashMap<String, AST.method> ml) {
-
-        // This loop is for attribute list
-        for(Entry<String, AST.attr> es : al.entrySet()) {
-            if(cb.attrList.containsKey(es.getKey())) {
-                // Means if parent class attributes contains the attribute of the present class
-                reportError.report(cl.filename, es.getValue().lineNo , "Attribute '" + es.getValue().name + "' is also an attribute of its parent class.");
-            } else {
-                // else adding the attribute the basic block
-                cb.attrList.put(es.getKey(), es.getValue());
+            else if(ft.getClass() == AST.method.class) {
+                // If the feature is a feature
+                // typecasting
+                AST.method mthd = (AST.method) ft;
+                ml.put(mthd.name , mthd);
             }
         }
 
-        boolean err;
+        // for copy function changing the name
+        cb.llvmIrName.put("copy" , "@_ZN" + cb.name.length() + cb.name + "4copy");
+
+        // Offset for method list
+        // Initializing with the number of methods in the parent class list
+        int mthd_offset = cb.pmList.size();
+
         // This loop is for method list
         for(Entry<String, AST.method> es : ml.entrySet()) {
-            // Initialising err as False for each method
-            err = false;
+            // string for method name
+            String mthdName = es.getKey();
+            // Same name function in parent class
             if(cb.mthdList.containsKey(es.getKey())) {
-                // Means parent class method contains the method of present class
-
-                // Now, methods can be different in 3 ways:
-                // * Different number of formals
-                // * Different return types
-                // * DIfferent parameter types
-
-                AST.method parentMthd = cb.mthdList.get(es.getKey());
-                AST.method currentMthd = es.getValue();
-
-                if(currentMthd.formals.size() != parentMthd.formals.size()) {
-                    // Means Parent method parameters size is not equal to the current method parameters size
-                    reportError.report(cl.filename, currentMthd.lineNo, "Different number of formal paramters in redefined method '" + currentMthd.name + "'.");
-                    err = true;
-                } else {
-                    if(currentMthd.typeid.equals(parentMthd.typeid) == false) {
-                        // Means the return type of inherited function is different
-                        reportError.report(cl.filename, currentMthd.lineNo, "In the redefined method '" + currentMthd.name + "' the return type is '" + currentMthd.typeid + "' instead of return type '" + parentMthd.typeid + "'.");
-                        err = true;
-                    }
-
-                    // Now we check for the typeid of parameters
-                    for(int i=0; i<currentMthd.formals.size(); i++) {
-                        if(currentMthd.formals.get(i).typeid.equals(parentMthd.formals.get(i).typeid) == false) {
-                            // Means the parameter typeid does not match with the corresponding parameter of parents type id
-                            reportError.report(cl.filename, currentMthd.lineNo, "In redefined method '" + currentMthd.name + "' the paramter typeid '" + currentMthd.formals.get(i).typeid + "' does not match with the parent typeid '" + parentMthd.formals.get(i).typeid + "'.");
-                            err = true;
-                        }
-                    }
-                }
-            }
-            
-            if(err == false) {
-                // Means no error is found 
-                cb.mthdList.put(es.getKey(), es.getValue());
+                cb.pmList.set(cb.mthdOffset.get(mthdName) , es.getValue());
+                cb.llvmIrName.put(mthdName , "@_ZN" + cb.name.length() + cb.name + mthdName.length() + mthdName);
+            } else {
+                cb.pmList.add(es.getValue());
+                cb.mthdOffset.put(es.getKey() , mthd_offset);
+                cb.llvmIrName.put(mthdName , "@_ZN" + cb.name.length() + cb.name + mthdName.length() + mthdName);
+                // Incrementing the method offset valye for a new entry
+                mthd_offset = mthd_offset + 1;
             }
         }
     }
@@ -315,19 +283,19 @@ public class ClassInfoCG {
         String parentClass = cl.parent;
         
         // Inserting the attribute and method list of parent class to the 'cl' class 
-        BasicClassBlock classBlock = new BasicClassBlock(cl.name, parentClass, cls.get(parentClass).attrList, cls.get(parentClass).mthdList);
+        BasicClassBlockCG classBlock = new BasicClassBlockCG(cl.name, parentClass, cls.get(parentClass).attrList, cls.get(parentClass).mthdList ,
+                                        new HashMap<String , Integer>() , cls.get(parentClass).mthdOffset , new ArrayList<AST.attr>() ,
+                                         cls.get(parentClass).pmList , cls.get(parentClass).llvmIrName);
 
-        // Hashmap for attribute list of ClassBlock
-        HashMap<String, AST.attr> classBlockAttrList = new HashMap<String, AST.attr>();
         // Hashmap for method list of ClassBlock
         HashMap<String, AST.method> classBlockMethodList = new HashMap<String, AST.method>();
 
-        // This function checks for multiple attribute and method definitions in the class
-        checkAttrMthd(cl, classBlockAttrList, classBlockMethodList);
+        classBlock.paList.add(new AST.attr("__Base" , parentClass + ".Base" , new AST.no_expr(0) , 0));
 
-        // This method checks for redefintions of inherited attributes and methods in the class
-        checkAttrMthdInherited(cl, classBlock, classBlockAttrList, classBlockMethodList);
+        classBlock.attrOffset.put("__Base" , 0);
 
+        putAttrMthdInherited(cl, classBlock,  classBlockMethodList);
+        
         // Adding the class depth for this inserted class, which is the depth of (parent + 1)
         classDepth.put(cl.name, classDepth.get(parentClass) + 1);
 
