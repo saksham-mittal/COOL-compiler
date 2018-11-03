@@ -79,14 +79,20 @@ public class Codegen{
 
 		generateLlvmObject = new GenerateLlvm();
 		
+		// Generating the declarations of standard class's methods 
 		generateLlvmObject.utilPrintMethodsOfClass(clsInfoCG, bfsQueue, out);
 		out.println("\n");
-
+		
 		bfsQueue.clear();
 		bfsQueue.offer(0);
 		
+		// Generating the definitions of standard class's methods 
 		generateLlvmObject.utilGenerateMethodsOfClass(clsInfoCG, bfsQueue, out);
 
+		// First, generating the code for the 'Main' class
+		generateLlvmObject.generateLlvmMainClass();
 
+		// Generating code for classes other than 'Main'
+		generateLlvmObject.generateLlvmOtherClasses();
 	}
 }

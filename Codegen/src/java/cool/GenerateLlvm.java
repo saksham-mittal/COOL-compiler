@@ -6,8 +6,16 @@ import java.util.*;
 import cool.AST;
 import cool.BasicClassBlockCG;
 import cool.BuildInheritanceGraph;
+import cool.VisitorMechanism;
+import cool.AST.program;
 
 public class GenerateLlvm {
+
+    public VisitorMechanismCG visitorMechCG;
+
+    public GenerateLlvm() {
+        visitorMechCG = new VisitorMechanismCG();
+    }
 
     public void printMethodsOfClass(BasicClassBlockCG bcb , PrintWriter out) {
         out.print("@_ZTV" + bcb.name.length() + bcb.name + " = constant " + "[" + 
@@ -17,15 +25,15 @@ public class GenerateLlvm {
             AST.method mthd = bcb.pmList.get(i);
             out.print("i8* bitcast (");
             String typeid; 
-            if(mthd.typeid == "Int" )            typeid = "i32";
-            else if(mthd.typeid == "String" )    typeid = "[1024 x i8]*";
-            else if(mthd.typeid == "Bool" )      typeid = "i8";
+            if(mthd.typeid == "Int")                typeid = "i32";
+            else if(mthd.typeid == "String")        typeid = "[1024 x i8]*";
+            else if(mthd.typeid == "Bool")          typeid = "i8";
             else  typeid =  "%class." + mthd.typeid + "*";
             out.print(typeid);
             out.print(" ( ");
             for(int j = 0; j < mthd.formals.size(); j++) {
                 AST.formal form = mthd.formals.get(j);
-                if(j > 0)   out.print(", ");
+                if(j > 0)                           out.print(", ");
                 String typeid1; 
                 if(form.typeid == "Int")            typeid1 = "i32";
                 else if(form.typeid == "String")    typeid1 = "[1024 x i8]*";
@@ -43,8 +51,6 @@ public class GenerateLlvm {
     public void utilPrintMethodsOfClass(ClassInfoCG clsInfoCG, Queue<Integer> q, PrintWriter out) {
         while(q.isEmpty() == false) {
             int firstClass = q.poll();
-            // if(indexToClassNameMap.size() > 0)
-            //     System.out.println("here\n");
             printMethodsOfClass(clsInfoCG.cls.get(BuildInheritanceGraphCG.indexToClassNameMap.get(firstClass)), out);
             for(Integer child : BuildInheritanceGraphCG.graph.get(firstClass)) {
                 q.offer(child);
@@ -112,6 +118,65 @@ public class GenerateLlvm {
             generateMethodsOfClass(clsInfoCG.cls.get(BuildInheritanceGraphCG.indexToClassNameMap.get(firstClass)), out);
             for(Integer child : BuildInheritanceGraphCG.graph.get(firstClass)) {
                 q.offer(child);
+            }
+        }
+    }
+
+    // Generate LLVM IR code for Main class by iterating over all its features and
+    // calling VisitNode() method on them
+    public void generateLlvmMainClass() {
+        AST.class_ mainClass = BuildInheritanceGraphCG.classToClassNameMap.get("Main");
+
+        List<AST.feature> featureMain = new ArrayList<AST.feature>();
+        featureMain = mainClass.features;
+        // Iterating over all the features of the Main class
+        for(int i=0; i<featureMain.size(); i++) {
+            AST.feature ftre = new AST.feature();
+            ftre = featureMain.get(i);
+            if(ftre.getClass() == AST.attr.class) {
+                // The feature is an attribute
+                AST.expression expr = new AST.expression();
+                AST.attr tempAttr = (AST.attr)ftre;
+                expr = tempAttr.value;
+                visitorMechCG.VisitNode(clsInfoCG, expr, out);
+            } else if(ftre.getClass() == AST.method.class) {
+                // The feature is a method
+                AST.expression expr = new AST.expression();
+                AST.method tempMethod = (AST.method)ftre;
+                expr = tempMethod.body;
+                visitorMechCG.VisitNode(clsInfoCG, expr, out);
+            }
+        }
+    }
+
+    // Generating llvm IR for other classes other than 'Main' bu traversing on
+    // the list of classes and traversing on their features, and calling VsitNode() method
+    public void generateLlvmOtherClasses() {
+        AST.class_ mainClass = BuildInheritanceGraphCG.classToClassNameMap.get("Main");
+
+        List<AST.feature> featureClass = new ArrayList<AST.feature>();
+        for(AST.class_ cl : program.classes) {
+            if(cl.name.equals("Main") == false) {
+                // Class is other than 'Main'
+                featureClass = cl.features;
+
+                for(int i=0; i<featureClass.size(); i++) {
+                    AST.feature ftre = new AST.feature();
+                    ftre = featureClass.get(i);
+                    if(ftre.getClass() == AST.attr.class) {
+                        // The feature is an attribute
+                        AST.expression expr = new AST.expression();
+                        AST.attr tempAttr = (AST.attr)ftre;
+                        expr = tempAttr.value;
+                        visitorMechCG.VisitNode(clsInfoCG, expr, out);
+                    } else if(ftre.getClass() == AST.method.class) {
+                        // The feature is a method
+                        AST.expression expr = new AST.expression();
+                        AST.method tempMethod = (AST.method)ftre;
+                        expr = tempMethod.body;
+                        visitorMechCG.VisitNode(clsInfoCG, expr, out);
+                    }
+                }
             }
         }
     }
