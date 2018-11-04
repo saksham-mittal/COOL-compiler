@@ -1,5 +1,5 @@
 ; I am a comment in LLVM-IR. Feel free to remove me.
-source_filename = "test10.cl"
+source_filename = "test5.cl"
 
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 
@@ -27,7 +27,7 @@ define i32 @main(  ) {
 entry:
 	%obj = alloca %class.Main
 	%obj1 = call %class.Main* @Main_Cons_Main( %class.Main* %obj )
-	%0 = call i1 @Main_main( %class.Main* %obj1 )
+	%0 = call i32 @Main_main( %class.Main* %obj1 )
 	ret i32 0
 }
 %class.Main = type {  }
@@ -40,16 +40,16 @@ entry:
 	ret %class.Main* %this1
 }
 
-define i1 @Main_main( %class.Main* %this ) {
+define i32 @Main_main( %class.Main* %this ) {
 entry:
-	%retval = alloca i1
+	%retval = alloca i32
 	%this.addr = alloca %class.Main*
 	store %class.Main* %this, %class.Main** %this.addr
 	%this1 = load %class.Main*, %class.Main** %this.addr
-	%0 = alloca i1
-	store i1 true, i1* %0
-	%1 = load i1, i1* %0
-	store i1 %1, i1* %retval
+	%0 = alloca i32
+	store i32 0, i32* %0
+	%1 = load i32, i32* %0
+	store i32 %1, i32* %retval
 	br label %fun_returning_basic_block
 dispatch_on_void_basic_block:
 	%err_msg_void_dispatch = alloca i8*
@@ -66,14 +66,10 @@ func_div_by_zero_abort:
 	call void @Object_abort(  )
 	br label %fun_returning_basic_block
 fun_returning_basic_block:
-	%2 = load i1, i1* %retval
-	ret i1 %2
+	%2 = load i32, i32* %retval
+	ret i32 %2
 }
-@.str.0 = private unnamed_addr constant [6 x i8] c"Hello\00"
-@.str.1 = private unnamed_addr constant [7 x i8] c"Hello1\00"
-@.str.2 = private unnamed_addr constant [7 x i8] c"Hello2\00"
-@.str.3 = private unnamed_addr constant [7 x i8] c"Hello3\00"
-%class.A = type { i32, i32, i8*, i8*, i8*, i8*, i8* }
+%class.A = type { i32 }
 
 define %class.A* @A_Cons_A( %class.A* %this ) {
 entry:
@@ -81,28 +77,76 @@ entry:
 	store %class.A* %this, %class.A** %this.addr
 	%this1 = load %class.A*, %class.A** %this.addr
 	%a = getelementptr inbounds %class.A, %class.A* %this1, i32 0, i32 0
-	store i32 0, i32* %a
-	%b = getelementptr inbounds %class.A, %class.A* %this1, i32 0, i32 1
-	store i32 0, i32* %b
-	%c = getelementptr inbounds %class.A, %class.A* %this1, i32 0, i32 2
-	store i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str.empty , i32 0, i32 0), i8** %c
-	%s = getelementptr inbounds %class.A, %class.A* %this1, i32 0, i32 3
-	%0 = alloca i8*
-	store i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.0, i32 0, i32 0), i8** %0	%1 = load i8*, i8** %0
-	store i8* %1, i8** %s
-	%s1 = getelementptr inbounds %class.A, %class.A* %this1, i32 0, i32 4
-	%2 = alloca i8*
-	store i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.1, i32 0, i32 0), i8** %2	%3 = load i8*, i8** %2
-	store i8* %3, i8** %s1
-	%s2 = getelementptr inbounds %class.A, %class.A* %this1, i32 0, i32 5
-	%4 = alloca i8*
-	store i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.2, i32 0, i32 0), i8** %4	%5 = load i8*, i8** %4
-	store i8* %5, i8** %s2
-	%s3 = getelementptr inbounds %class.A, %class.A* %this1, i32 0, i32 6
-	%6 = alloca i8*
-	store i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.str.3, i32 0, i32 0), i8** %6	%7 = load i8*, i8** %6
-	store i8* %7, i8** %s3
+	%0 = alloca i32
+	store i32 5, i32* %0
+	%1 = load i32, i32* %0
+	store i32 %1, i32* %a
 	ret %class.A* %this1
+}
+@.str.0 = private unnamed_addr constant [4 x i8] c"ABC\00"
+%class.B = type { i8*, i1 }
+
+define %class.B* @B_Cons_B( %class.B* %this ) {
+entry:
+	%this.addr = alloca %class.B*
+	store %class.B* %this, %class.B** %this.addr
+	%this1 = load %class.B*, %class.B** %this.addr
+	%a = getelementptr inbounds %class.B, %class.B* %this1, i32 0, i32 0
+	%0 = alloca i8*
+	store i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.0, i32 0, i32 0), i8** %0	%1 = load i8*, i8** %0
+	store i8* %1, i8** %a
+	%c = getelementptr inbounds %class.B, %class.B* %this1, i32 0, i32 1
+	%2 = alloca i1
+	store i1 true, i1* %2
+	%3 = load i1, i1* %2
+	store i1 %3, i1* %c
+	ret %class.B* %this1
+}
+%class.C = type { i32 }
+
+define %class.C* @C_Cons_C( %class.C* %this ) {
+entry:
+	%this.addr = alloca %class.C*
+	store %class.C* %this, %class.C** %this.addr
+	%this1 = load %class.C*, %class.C** %this.addr
+	%a = getelementptr inbounds %class.C, %class.C* %this1, i32 0, i32 0
+	store i32 0, i32* %a
+	ret %class.C* %this1
+}
+
+define i32 @C_foo( %class.C* %this ) {
+entry:
+	%retval = alloca i32
+	%this.addr = alloca %class.C*
+	store %class.C* %this, %class.C** %this.addr
+	%this1 = load %class.C*, %class.C** %this.addr
+	%a = getelementptr inbounds %class.C, %class.C* %this1, i32 0, i32 0
+	%0 = alloca i32
+	store i32 5, i32* %0
+	%1 = load i32, i32* %0
+	store i32 %1, i32* %a
+	%2 = alloca i32
+	store i32 0, i32* %2
+	%3 = load i32, i32* %2
+	store i32 %3, i32* %retval
+	br label %fun_returning_basic_block
+dispatch_on_void_basic_block:
+	%err_msg_void_dispatch = alloca i8*
+	store i8* getelementptr inbounds ([47 x i8], [47 x i8]* @staticdispatchonvoiderr, i32 0, i32 0), i8** %err_msg_void_dispatch
+	%print_err_msg_void_dispatch = load i8*, i8** %err_msg_void_dispatch
+	call void @IO_out_string( i8* %print_err_msg_void_dispatch )
+	call void @Object_abort(  )
+	br label %fun_returning_basic_block
+func_div_by_zero_abort:
+	%err_msg = alloca i8*
+	store i8* getelementptr inbounds ([31 x i8], [31 x i8]* @divby0err, i32 0, i32 0), i8** %err_msg
+	%print_err_msg = load i8*, i8** %err_msg
+	call void @IO_out_string( i8* %print_err_msg )
+	call void @Object_abort(  )
+	br label %fun_returning_basic_block
+fun_returning_basic_block:
+	%4 = load i32, i32* %retval
+	ret i32 %4
 }
 
 define void @Object_abort(  ) {

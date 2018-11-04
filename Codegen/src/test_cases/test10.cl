@@ -1,21 +1,16 @@
 -- testing rules for arithmetic operations 
 
 class Main {
-    main () : Int {
-        0
+    main () : Object {
+        
     };
 };
 class A {
     a : Int;
     b : Int;
     c : String;
-    foo() : Int {
-        let x : Int <- 5 in {
-            a <- a + x;
-            b <- b - a;
-            x <- a * b;
-            b <- b / x;
-            0;
-        }
-    };
+    s : String <- "Hello";
+	s1 : String <- "Hello1";
+	s2 : String <- "Hello2";
+	s3 : String <- "Hello3";
 };
