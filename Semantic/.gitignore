@@ -1,0 +1,16 @@
+*.s
+*.class
+*.txt
+*.ll
+
+*.aux
+*.log
+*.nav
+*.toc
+*.out
+*.snm
+*.bbl
+*.blg
+*.hdf5
+*.bcf
+*.xml
