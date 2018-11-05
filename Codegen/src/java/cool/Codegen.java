@@ -21,7 +21,7 @@ public class Codegen{
 
 	public Codegen(AST.program program, PrintWriter out){
 		//Write Code generator code here
-		out.println("; I am a comment in LLVM-IR. Feel free to remove me.");
+		out.println("; Generated llvm-IR by our COOL-Compiler :)");
 		
 		String filename = AST.program.classes.get(0).filename;
 		out.println("source_filename = \"" + filename + "\"\n");

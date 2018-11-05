@@ -3,182 +3,200 @@ package cool;
 import java.util.*;
 import java.io.PrintWriter;
 
+/* 
+    This is a helper class containing methods to print the various possible llvm-IR instructions.
+    Every method prints an IR line for corresponding operations happening in the IR.
+    This prevents us from writing code for various operations again and again and helps implement code reusability. 
+*/
+
 public class PrintUtility {
-    void escapedString(PrintWriter out, String str) {
-        for(int i = 0; i < str.length(); i++) {
-            if (str.charAt(i) == '\\') {
-                out.print("\\5C");
-            } else if (str.charAt(i) == '\"') {
-                out.print("\\22");
-            } else if (str.charAt(i) == '\n') {
-                out.print("\\0A");
-            } else if (str.charAt(i) == '\t') {
-                out.print("\\09");
-            } else {
-                out.print(str.charAt(i));
+
+    /* 
+        Generates IR instruction for return operation in a method.
+    */
+    void returnInstUtil(PrintWriter out, OpClass op, String nameVar) {
+        out.print("\tret ");
+        if (op.type.id == TypeMapping.TypeID.VOID) {
+            out.print("void\n");
+        } else {
+            out.print(op.type.name + " " + op.opName + "\n");
+        }  
+        out.print("}\n");
+    }
+    
+    /* 
+        Generates IR instruction for alloca operation for a variable.
+    */
+    void allocaInstUtil(PrintWriter out, TypeMapping type, OpClass result, String nameVar) {
+        out.print("\t" + result.opName + " = alloca " + type.name + "\n");
+    }
+
+    /* 
+        Generates IR instruction for load operation for a variable.
+    */
+    void loadInstUtil(PrintWriter out, TypeMapping type, OpClass op, OpClass result, String nameVar) {
+        out.print("\t" + result.opName + " = load " + type.name + ", " + op.type.name + " " + op.opName + "\n");
+    }
+    
+    void storeInstUtil(PrintWriter out, OpClass op, OpClass result, String nameVar) {
+        out.print("\tstore " + op.type.name + " " + op.opName + ", " + result.type.name + " " + result.opName + "\n");
+    }
+    
+    void stringEscUtil(PrintWriter out, String str, String nameVar) {
+        int i = 0;
+        while(i < str.length()) {
+            char chr = str.charAt(i);
+            switch(chr) {
+                case '\\':
+                    out.print("\\5C");
+                    break;
+                case '\"':
+                    out.print("\\22");
+                    break;
+                case '\n':
+                    out.print("\\0A");
+                    break;
+                case '\t':
+                    out.print("\\09");
+                    break;
+                default: 
+                    out.print(chr);
             }
+            i++;
         }   
     }
     
-    void initConstant(PrintWriter out, String name, ConstValClass op) {
-        out.print("@" + name + " = ");
-        out.print("constant " + op.type.name + " ");
-        if (op.type.id == TypeMapping.TypeID.INT8) {
-            out.print("c\"");
-            escapedString(out, op.value);
-            out.print("\\00\"\n");
-        } else {
-            out.print(op.value + "\n");
-        }
-    }
-    
-    void define(PrintWriter out, TypeMapping retType, String name, List<OpClass> args) {
+    void generateDefUtil(PrintWriter out, TypeMapping retType, String name, List<OpClass> args, String nameVar) {
         out.print("\ndefine " + retType.name + " @" + name + "( ");
-        for(int i = 0; i < args.size(); i++) {
-            if (i != args.size() - 1) {
-                out.print(args.get(i).type.name + " " + args.get(i).opName + ", ");
+        int i = 0; 
+        while(i < args.size()) {
+            if (i == args.size() - 1) {
+                out.print(args.get(i).type.name + " " + args.get(i).opName);
             } else {
-                out.print(args.get(i).type.name + " " + args.get(i).opName + "");
+                out.print(args.get(i).type.name + " " + args.get(i).opName + ", ");
             }
+            i++;
         }
         out.println(" ) {\nentry:");
     }
     
-    void declare(PrintWriter out, TypeMapping retType, String name, List<TypeMapping> args) {
+    void generateDeclUtil(PrintWriter out, TypeMapping retType, String name, List<TypeMapping> args, String nameVar) {
         out.print("declare " + retType.name + " @" + name + "( ");
-        for(int i = 0; i < args.size(); i++) {
-            if (i != args.size() - 1) {
-                out.print(args.get(i).name + ", ");
+        int i = 0;
+        while( i < args.size()) {
+            if (i == args.size() - 1) {
+                out.print(args.get(i).name);
             } else {
-                out.print(args.get(i).name + "");
+                out.print(args.get(i).name + ", ");
             }
+            i++;
         }
         out.print(" )\n");
     }
     
-    void typeDefine(PrintWriter out, String className, List<TypeMapping> attributes) {
-        out.print("%class." + className + " = type { ");
-        for(int i = 0; i < attributes.size(); i++) {
-            if (i != attributes.size() - 1) { 
-                out.print(attributes.get(i).name + ", ");
-            } else {
-                out.print(attributes.get(i).name + "");
-            }
-        }
-        out.print(" }\n");
-    }
-    
-    void arithOp(PrintWriter out, String operation, OpClass op1, OpClass op2, OpClass result) {
+    void arithemeticUtil(PrintWriter out, String operation, OpClass op1, OpClass op2, OpClass result, String nameVar) {
         out.print("\t");
-        if (result.type.id != TypeMapping.TypeID.VOID) {
+        if (result.type.id == TypeMapping.TypeID.VOID) {
+            out.print(operation + " " + op1.type.name + " " + op1.opName + ", "  + op2.opName + "\n");
+        } else {
             out.print(result.opName + " = ");
-        }
-        out.print(operation + " " + op1.type.name + " " + op1.opName + ", "  + op2.opName + "\n");
-    }
-    
-    void allocaOp(PrintWriter out, TypeMapping type, OpClass result) {
-        out.print("\t" + result.opName + " = alloca " + type.name + "\n");
-    }
-    
-    void loadOp(PrintWriter out, TypeMapping type, OpClass op, OpClass result) {
-        out.print("\t" + result.opName + " = load " + type.name + ", " + op.type.name + " "
-            + op.opName + "\n");
-    }
-    
-    void storeOp(PrintWriter out, OpClass op, OpClass result) {
-        out.print("\tstore " + op.type.name + " " + op.opName + ", " + result.type.name + " "
-            + result.opName + "\n");
-    }
-    
-    void getElementPtr(PrintWriter out, TypeMapping type, List<OpClass> operandList, OpClass result, boolean inbounds) {
-        out.print("\t");
-        if (result.type.id != TypeMapping.TypeID.VOID) {
-            out.print(result.opName + " = ");
-        }
-        out.print("getelementptr ");
-        if (inbounds == true) {
-            out.print("inbounds ");
-        } 
-        out.print(type.name + ", ");
-        for(int i = 0; i < operandList.size(); i++) {    
-            if (i != operandList.size() - 1) {
-                out.print(operandList.get(i).type.name + " " + operandList.get(i).opName + ", ");
-            } else {
-                out.print(operandList.get(i).type.name + " " + operandList.get(i).opName + "\n");
-            }
+            out.print(operation + " " + op1.type.name + " " + op1.opName + ", "  + op2.opName + "\n");
         }
     }
     
-    void getElementPtrEmbed(PrintWriter out, TypeMapping type, OpClass op1, OpClass op2, OpClass op3, boolean inbounds) {
-        out.print("\tgetelementptr ");
-        if (inbounds == true) {    
-            out.print("inbounds ");
-        }
-        out.print("( " + type.name + ", " + op1.type.name + "* " + op1.opName + ", "
-            + op2.type.name + " " + op2.opName + ", " + op3.type.name + " " + op3.opName + ")\n");
-    }
-    
-    void branchCondOp(PrintWriter out, OpClass op, String labelTrue, String labelFalse) {
-        out.print("\tbr " + op.type.name + " " + op.opName + ", label %" + labelTrue
-            + ", label %" + labelFalse + "\n");
-    }
-    
-    void branchUncondOp(PrintWriter out, String label) {
-        out.print("\tbr label %" + label + "\n\n");
-    }
-    
-    void compareOp(PrintWriter out, String cond, OpClass op1, OpClass op2, OpClass result) {
+    void cmpInstUtil(PrintWriter out, String cond, OpClass op1, OpClass op2, OpClass result, String nameVar) {
         out.print("\t" + result.opName + " = icmp ");
-        if (cond.equals("EQ")) {
-            out.print("eq ");
-        } else if (cond.equals("LT")) {
-            out.print("slt ");
-        } else if (cond.equals("LE")) {
-            out.print("sle ");
+        switch(cond) {
+            case "EQ":
+                out.print("eq ");
+                break;
+            case "LT":
+                out.print("slt ");
+                break;
+            case "LE":
+                out.print("sle ");
+                break;
         }
         out.print(op1.type.name + " " + op1.opName + ", " + op2.opName + "\n");
     }
     
-    void callOp(PrintWriter out, List<TypeMapping> argTypes, String funcName, boolean isGlobal, List<OpClass> args, OpClass resultOp) {
+    void getElemPtrInstUtil(PrintWriter out, TypeMapping type, List<OpClass> operandList, OpClass result, boolean inbounds, String nameVar) {
+        out.print("\t");
+        if (result.type.id == TypeMapping.TypeID.VOID) {
+            out.print("getelementptr ");
+        } else {
+            out.print(result.opName + " = ");
+            out.print("getelementptr ");
+        }
+        if (inbounds != true) {}
+        else
+            out.print("inbounds ");
+        out.print(type.name + ", ");
+        for(int i = 0; i < operandList.size(); i++) {    
+            if (i == operandList.size() - 1) {
+                out.print(operandList.get(i).type.name + " " + operandList.get(i).opName + "\n");
+            } else {
+                out.print(operandList.get(i).type.name + " " + operandList.get(i).opName + ", ");
+            }
+        }
+    }
+    
+    void brConditionUtil(PrintWriter out, OpClass op, String labelTrue, String labelFalse, String nameVar) {
+        out.print("\tbr " + op.type.name + " " + op.opName + ", label %" + labelTrue + ", label %" + labelFalse + "\n");
+    }
+    
+    void brUncoditionUtil(PrintWriter out, String label, String nameVar) {
+        out.print("\tbr label %" + label + "\n\n");
+    }
+    
+    void callInstUtil(PrintWriter out, List<TypeMapping> argTypes, String funcName, boolean isGlobal, List<OpClass> args, OpClass resultOp, String nameVar) {
         out.print("\t");
         if (resultOp.type.id == TypeMapping.TypeID.VOID) {
             out.print("call " + resultOp.type.name);
         } else 
-            out.print(resultOp.opName + " = call " + resultOp.type.name);
-            
-        if (argTypes.size() > 0) {
+        out.print(resultOp.opName + " = call " + resultOp.type.name);
+        int sz = argTypes.size();
+        if ( sz > 0) {
             out.print(" (");
-        for (int i = 0; i < argTypes.size(); i++) {
-            if (i != argTypes.size() - 1) {
-                out.print(argTypes.get(i).name + ", ");
-            } else {
-                out.print(argTypes.get(i).name + ") ");
+            int i = 0;
+            while(i < sz) {
+                if (i == sz - 1) {
+                    out.print(argTypes.get(i).name + ") ");
+                } else {
+                    out.print(argTypes.get(i).name + ", ");
+                }
+                i++;
             }
         }
-        }
-        if (isGlobal == true) {
-            out.print(" @");
-        } else {
+        if (isGlobal != true) {
             out.print(" %");
+        } else {
+            out.print(" @");
         } 
         out.print(funcName + "( ");
-        for (int i = 0; i < args.size(); i++) {
-            if (i != args.size() - 1) {      
-                out.print(args.get(i).type.name + " " + args.get(i).opName + ", ");
+        int i = 0;
+        while(i < args.size()) {
+            if (i == args.size() - 1) {      
+                out.print(args.get(i).type.name + " " + args.get(i).opName);
             } else {
-                out.print(args.get(i).type.name + " " + args.get(i).opName + "");
+                out.print(args.get(i).type.name + " " + args.get(i).opName + ", ");
             }
+            i++;
         }
         out.print(" )\n");
     }
     
-    void retOp(PrintWriter out, OpClass op) {
-        out.print("\tret ");
-        if (op.type.id != TypeMapping.TypeID.VOID) {
-            out.print(op.type.name + " " + op.opName + "\n");
-        } else {
-            out.print("void\n");
-        }  
-        out.print("}\n");
+    void classTypeUtil(PrintWriter out, String className, List<TypeMapping> attributes, String nameVar) {
+        out.print("%class." + className + " = type { ");
+        int i = 0;
+        while(i < attributes.size()) {
+            if (i == attributes.size() - 1) { 
+                out.print(attributes.get(i).name);
+            } else {
+                out.print(attributes.get(i).name + ", ");
+            }
+            i++;
+        }
+        out.print(" }\n");
     }
 }

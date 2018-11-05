@@ -43,22 +43,22 @@ public class GenerateLlvm {
         // String Concatenation method
         paramsList.add(new TypeMapping(TypeMapping.TypeID.INT8PTR));
         paramsList.add(new TypeMapping(TypeMapping.TypeID.INT8PTR));
-        printUtil.declare(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), "strcat", paramsList);
+        printUtil.generateDeclUtil(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), "strcat", paramsList, null);
         
         // String Copy method
-        printUtil.declare(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), "strcpy", paramsList);
+        printUtil.generateDeclUtil(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), "strcpy", paramsList, null);
         
         // String Compare method
-        printUtil.declare(out, new TypeMapping(TypeMapping.TypeID.INT32), "strcmp", paramsList);
+        printUtil.generateDeclUtil(out, new TypeMapping(TypeMapping.TypeID.INT32), "strcmp", paramsList, null);
         
         // String n Copy method
         paramsList.add(new TypeMapping(TypeMapping.TypeID.INT32));
-        printUtil.declare(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), "strncpy", paramsList);
+        printUtil.generateDeclUtil(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), "strncpy", paramsList, null);
         
         // String Length method
         paramsList = new ArrayList<TypeMapping>();
         paramsList.add(new TypeMapping(TypeMapping.TypeID.INT8PTR));
-        printUtil.declare(out, new TypeMapping(TypeMapping.TypeID.INT32), "strlen", paramsList);
+        printUtil.generateDeclUtil(out, new TypeMapping(TypeMapping.TypeID.INT32), "strlen", paramsList, null);
 
 
         /*
@@ -69,18 +69,18 @@ public class GenerateLlvm {
         paramsList.add(new TypeMapping(TypeMapping.TypeID.VARARG));
 
         // printf method
-        printUtil.declare(out, new TypeMapping(TypeMapping.TypeID.INT32), "printf", paramsList);
+        printUtil.generateDeclUtil(out, new TypeMapping(TypeMapping.TypeID.INT32), "printf", paramsList, null);
 
         // scanf method
-        printUtil.declare(out, new TypeMapping(TypeMapping.TypeID.INT32), "scanf", paramsList);
+        printUtil.generateDeclUtil(out, new TypeMapping(TypeMapping.TypeID.INT32), "scanf", paramsList, null);
 
         /*
             C malloc and exit methods
         */
         paramsList = new ArrayList<TypeMapping>();
         paramsList.add(new TypeMapping(TypeMapping.TypeID.INT32));
-        printUtil.declare(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), "malloc", paramsList);
-        printUtil.declare(out, new TypeMapping(TypeMapping.TypeID.VOID), "exit", paramsList);
+        printUtil.generateDeclUtil(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), "malloc", paramsList, null);
+        printUtil.generateDeclUtil(out, new TypeMapping(TypeMapping.TypeID.VOID), "exit", paramsList, null);
         out.print("\n");
     }
     
@@ -95,35 +95,35 @@ public class GenerateLlvm {
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), "retval");
             args = new ArrayList<OpClass>();
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "this"));
-            printUtil.define(out, retValue.type, mangledFunctionName, args);
-            printUtil.callOp(out, new ArrayList<TypeMapping>(), "strlen", true, args, retValue);
-            printUtil.retOp(out, retValue);
+            printUtil.generateDefUtil(out, retValue.type, mangledFunctionName, args, null);
+            printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "strlen", true, args, retValue, null);
+            printUtil.returnInstUtil(out, retValue, null);
         } else if (functionName.equals("concat")) {
             // Generating code for concat method
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "retval");
             args = new ArrayList<OpClass>();
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "this"));
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "that"));
-            printUtil.define(out, retValue.type, mangledFunctionName, args);
+            printUtil.generateDefUtil(out, retValue.type, mangledFunctionName, args, null);
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "memnew");
             args = new ArrayList<OpClass>();
             args.add((OpClass)new IntValClass(1024));
-            printUtil.callOp(out, new ArrayList<TypeMapping>(), "malloc", true, args, retValue);
+            printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "malloc", true, args, retValue, null);
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "copystring");
             args = new ArrayList<OpClass>();
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "memnew"));
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "this"));
-            printUtil.callOp(out, new ArrayList<TypeMapping>(), "strcpy", true, args, retValue);
+            printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "strcpy", true, args, retValue, null);
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "retval");
             args = new ArrayList<OpClass>();
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "copystring"));
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "that"));
-            printUtil.callOp(out, new ArrayList<TypeMapping>(), "strcat", true, args, retValue);
+            printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "strcat", true, args, retValue, null);
 
-            printUtil.retOp(out, retValue);
+            printUtil.returnInstUtil(out, retValue, null);
         } else if (functionName.equals("substr")) {
             // Generating code for substr method
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "retval");
@@ -131,25 +131,25 @@ public class GenerateLlvm {
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "this"));
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), "start"));
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), "len"));
-            printUtil.define(out, retValue.type, mangledFunctionName, args);
+            printUtil.generateDefUtil(out, retValue.type, mangledFunctionName, args, null);
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "0");
             args = new ArrayList<OpClass>();
             args.add((OpClass)new IntValClass(1024));
-            printUtil.callOp(out, new ArrayList<TypeMapping>(), "malloc", true, args, retValue);
+            printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "malloc", true, args, retValue, null);
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "1");
             args = new ArrayList<OpClass>();
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "this"));
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), "start"));
-            printUtil.getElementPtr(out, new TypeMapping(TypeMapping.TypeID.INT8), args, retValue, true);
+            printUtil.getElemPtrInstUtil(out, new TypeMapping(TypeMapping.TypeID.INT8), args, retValue, true, null);
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "2");
             args = new ArrayList<OpClass>();
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "0"));
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "1"));
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), "len"));
-            printUtil.callOp(out, new ArrayList<TypeMapping>(), "strncpy", true, args, retValue);
+            printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "strncpy", true, args, retValue, null);
             out.println("\t%3 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.empty, i32 0, i32 0");
             out.println("\t%retval = call i8* @strcat( i8* %2, i8* %3 )");
             out.println("\tret i8* %retval\n}");
@@ -159,17 +159,17 @@ public class GenerateLlvm {
             args = new ArrayList<OpClass>();
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "this"));
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "start"));
-            printUtil.define(out, retValue.type, mangledFunctionName, args);
+            printUtil.generateDefUtil(out, retValue.type, mangledFunctionName, args, null);
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), "0");
             args = new ArrayList<OpClass>();
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "this"));
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "start"));
-            printUtil.callOp(out, new ArrayList<TypeMapping>(), "strcmp", true, args, retValue);
+            printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "strcmp", true, args, retValue, null);
 
-            printUtil.compareOp(out, "EQ", retValue, (OpClass)new IntValClass(0), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), "1"));
+            printUtil.cmpInstUtil(out, "EQ", retValue, (OpClass)new IntValClass(0), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), "1"), null);
 
-            printUtil.retOp(out, new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), "1"));
+            printUtil.returnInstUtil(out, new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), "1"), null);
         }
     }
 
@@ -183,7 +183,7 @@ public class GenerateLlvm {
         if (functionName.equals("abort")) {
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null");
             args = new ArrayList<OpClass>();
-            printUtil.define(out, retValue.type, mangledFunctionName, args);
+            printUtil.generateDefUtil(out, retValue.type, mangledFunctionName, args, null);
 
             out.println("\tcall void (i32) @exit(i32 0)");
             out.println("\tret void\n}\n");
@@ -197,20 +197,20 @@ public class GenerateLlvm {
 
         if (functionName.equals("out_string")) {
             // Method for generating the out_string method
-            retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null");
             args = new ArrayList<OpClass>();
+            retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null");
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "given"));
-            printUtil.define(out, retValue.type, mangledFunctionName, args);
+            printUtil.generateDefUtil(out, retValue.type, mangledFunctionName, args, null);
 
             out.println("\t%0 = getelementptr inbounds [3 x i8], [3 x i8]* @strfmt, i32 0, i32 0");
             out.println("\t%call = call i32 ( i8*, ... ) @printf(i8* %0, i8* %given)");
             out.println("\tret void\n}\n");
         } else if (functionName.equals("out_int")) {
             // Method for generating the out_int method
-            retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null");
             args = new ArrayList<OpClass>();
+            retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null");
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), "given"));
-            printUtil.define(out, retValue.type, mangledFunctionName, args);
+            printUtil.generateDefUtil(out, retValue.type, mangledFunctionName, args, null);
 
             out.println("\t%0 = getelementptr inbounds [3 x i8], [3 x i8]* @intfmt, i32 0, i32 0");
             out.println("\t%call = call i32 ( i8*, ... ) @printf(i8* %0, i32 %given)");
@@ -218,50 +218,50 @@ public class GenerateLlvm {
         } else if (functionName.equals("in_string")) {
             // Method for generating the in_string method
             args = new ArrayList<OpClass>();
-            printUtil.define(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), mangledFunctionName, args);
+            printUtil.generateDefUtil(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), mangledFunctionName, args, null);
 
             out.println("\t%0 = bitcast [3 x i8]* @strfmt to i8*");
 
+            args = new ArrayList<OpClass>();
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "retval");
-            args = new ArrayList<OpClass>();
             args.add((OpClass)new IntValClass(1024));
-            printUtil.callOp(out, new ArrayList<TypeMapping>(), "malloc", true, args, retValue);
+            printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "malloc", true, args, retValue, null);
 
-            retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), "1");
             args = new ArrayList<OpClass>();
+            retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), "1");
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "0"));
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "retval"));
             List<TypeMapping> argTypes = new ArrayList<TypeMapping>();
             argTypes.add(new TypeMapping(TypeMapping.TypeID.INT8PTR));
             argTypes.add(new TypeMapping(TypeMapping.TypeID.VARARG));
-            printUtil.callOp(out, argTypes, "scanf", true, args, retValue);
-            printUtil.retOp(out, args.get(1));
+            printUtil.callInstUtil(out, argTypes, "scanf", true, args, retValue, null);
+            printUtil.returnInstUtil(out, args.get(1), null);
         } else if (functionName.equals("in_int")) {
             // Method for generating the in_int method
             args = new ArrayList<OpClass>();
-            printUtil.define(out, new TypeMapping(TypeMapping.TypeID.INT32), mangledFunctionName, args);
+            printUtil.generateDefUtil(out, new TypeMapping(TypeMapping.TypeID.INT32), mangledFunctionName, args, null);
 
             out.println("\t%0 = bitcast [3 x i8]* @intfmt to i8*");
 
-            retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "1");
             args = new ArrayList<OpClass>();
+            retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "1");
             args.add((OpClass)new IntValClass(4));
-            printUtil.callOp(out, new ArrayList<TypeMapping>(), "malloc", true, args, retValue);
+            printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "malloc", true, args, retValue, null);
 
             out.println("\t%2 = bitcast i8* %1 to i32*");
 
-            retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), "3");
             args = new ArrayList<OpClass>();
+            retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), "3");
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "0"));
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT32PTR), "2"));
             List<TypeMapping> argTypes = new ArrayList<TypeMapping>();
             argTypes.add(new TypeMapping(TypeMapping.TypeID.INT8PTR));
             argTypes.add(new TypeMapping(TypeMapping.TypeID.VARARG));
-            printUtil.callOp(out, argTypes, "scanf", true, args, retValue);
+            printUtil.callInstUtil(out, argTypes, "scanf", true, args, retValue, null);
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), "retval");
-            printUtil.loadOp(out, new TypeMapping(TypeMapping.TypeID.INT32), args.get(1), retValue);
-            printUtil.retOp(out, retValue);
+            printUtil.loadInstUtil(out, new TypeMapping(TypeMapping.TypeID.INT32), args.get(1), retValue, null);
+            printUtil.returnInstUtil(out, retValue, null);
         }
     }
 
@@ -300,77 +300,74 @@ public class GenerateLlvm {
         attrOperandList.add(new OpClass(operandType(clsName, true, 1), "this"));
     
         // Define the constructor and establish pointer information
-        printUtil.define(out, operandType(clsName, true, 1), mthdName, attrOperandList);
-        printUtil.allocaOp(out, operandType(clsName, true, 1), new OpClass(operandType(clsName, true, 1), "this.addr"));
+        printUtil.generateDefUtil(out, operandType(clsName, true, 1), mthdName, attrOperandList, null);
+        printUtil.allocaInstUtil(out, operandType(clsName, true, 1), new OpClass(operandType(clsName, true, 1), "this.addr"), null);
         
         // Performing load and store operations for constructors
-        TypeMapping singlePtr = operandType(clsName, true, 1);
-        TypeMapping doublePtr = operandType(clsName, true, 2);
-        OpClass op = new OpClass(singlePtr, "this");
-        OpClass opAddr = new OpClass(doublePtr, "this" + ".addr");
-        printUtil.storeOp(out, op, opAddr);
-        printUtil.loadOp(out, singlePtr, opAddr, new OpClass(singlePtr, "this1"));
+        printUtil.storeInstUtil(out, new OpClass(operandType(clsName, true, 1), "this"), new OpClass(operandType(clsName, true, 2), "this" + ".addr"), null);
+        printUtil.loadInstUtil(out, operandType(clsName, true, 1), new OpClass(operandType(clsName, true, 2), "this" + ".addr"), new OpClass(operandType(clsName, true, 1), "this1"), null);
     
         List<AST.attr> attrListTemp = clsInfoCG.cls.get(clsName).attrList;
-        for (int i = 0; i < attrListTemp.size(); i++) {
+        int i = 0;
+        while(i < attrListTemp.size()) {
             AST.attr attrTemp = attrListTemp.get(i);
             OpClass res = new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), attrTemp.name);
             List<OpClass> operandList = new ArrayList<OpClass>();
             operandList.add(new OpClass(operandType(clsName, true, 1), "this1"));
         
-            if (attrTemp.typeid.equals("Int")) {
-                // Int attribute codegen
-                operandList.add((OpClass)new IntValClass(0));
-                operandList.add((OpClass)new IntValClass(i));
-                printUtil.getElementPtr(out, operandType(clsName, true, 0), operandList, res, true);
-                TypeMapping ptr = new TypeMapping(TypeMapping.TypeID.INT32PTR);
-                if (attrTemp.value.getClass() == AST.no_expr.class || attrTemp.value.getClass() == AST.new_.class) {
-                    printUtil.storeOp(out, (OpClass)new IntValClass(0), new OpClass(ptr, attrTemp.name));
-                } else {
-                    track = visitNodeObject.VisitorPattern(out, printUtil, attrTemp.value, track, clsInfoCG, cl, functionFormalNameList);
-                    printUtil.storeOp(out, new OpClass(track.lastInstructionType, String.valueOf(track.registerVal - 1)), new OpClass(track.lastInstructionType.correspondingPtrType(), attrTemp.name));
-                }
-            } else if (attrTemp.typeid.equals("String")) {
-                // String attribute codegen
-                operandList.add((OpClass)new IntValClass(0));
-                operandList.add((OpClass)new IntValClass(i));
-                printUtil.getElementPtr(out, operandType(clsName, true, 0), operandList, res, true);
-                String lenString = null;
-                if (attrTemp.value.getClass() == AST.no_expr.class || attrTemp.value.getClass() == AST.new_.class) {
-                    lenString = "[" + 1 + " x i8]";
-                    out.println("\tstore i8* getelementptr inbounds (" + lenString + ", " + lenString + "* @.str.empty , i32 0, i32 0), i8** %" + attrTemp.name);
-                } else {
-                    track = visitNodeObject.VisitorPattern(out, printUtil, attrTemp.value, track, clsInfoCG, cl, functionFormalNameList);
-                    printUtil.storeOp(out, new OpClass(track.lastInstructionType, String.valueOf(track.registerVal - 1)), new OpClass(track.lastInstructionType.correspondingPtrType(), attrTemp.name));
-                }
-            } else if (attrTemp.typeid.equals("Bool")) {
+            if (attrTemp.typeid.equals("Bool") == true) {
                 // Bool attribute codegen
                 operandList.add((OpClass)new IntValClass(0));
                 operandList.add((OpClass)new IntValClass(i));
-                printUtil.getElementPtr(out, operandType(clsName, true, 0), operandList, res, true);
+                printUtil.getElemPtrInstUtil(out, operandType(clsName, true, 0), operandList, res, true, null);
                 TypeMapping ptr = new TypeMapping(TypeMapping.TypeID.INT1PTR);
-                if (attrTemp.value.getClass() == AST.no_expr.class || attrTemp.value.getClass() == AST.new_.class) {
-                    printUtil.storeOp(out, (OpClass)new BoolValClass(false), new OpClass(ptr, attrTemp.name));
-                } else {
+                if (attrTemp.value.getClass() != AST.no_expr.class && attrTemp.value.getClass() != AST.new_.class) {
                     track = visitNodeObject.VisitorPattern(out, printUtil, attrTemp.value, track, clsInfoCG, cl, functionFormalNameList);
-                    printUtil.storeOp(out, new OpClass(track.lastInstructionType, String.valueOf(track.registerVal - 1)), new OpClass(track.lastInstructionType.correspondingPtrType(), attrTemp.name));
+                    printUtil.storeInstUtil(out, new OpClass(track.lastInstructionType, String.valueOf(track.registerVal - 1)), new OpClass(track.lastInstructionType.correspondingPtrType(), attrTemp.name), null);
+                } else {
+                    printUtil.storeInstUtil(out, (OpClass)new BoolValClass(false), new OpClass(ptr, attrTemp.name), null);
+                }
+            } else if (attrTemp.typeid.equals("String") == true) {
+                // String attribute codegen
+                operandList.add((OpClass)new IntValClass(0));
+                operandList.add((OpClass)new IntValClass(i));
+                printUtil.getElemPtrInstUtil(out, operandType(clsName, true, 0), operandList, res, true, null);
+                String lenString = null;
+                if (attrTemp.value.getClass() != AST.no_expr.class && attrTemp.value.getClass() != AST.new_.class) {
+                    track = visitNodeObject.VisitorPattern(out, printUtil, attrTemp.value, track, clsInfoCG, cl, functionFormalNameList);
+                    printUtil.storeInstUtil(out, new OpClass(track.lastInstructionType, String.valueOf(track.registerVal - 1)), new OpClass(track.lastInstructionType.correspondingPtrType(), attrTemp.name), null);
+                } else {
+                    lenString = "[" + 1 + " x i8]";
+                    out.println("\tstore i8* getelementptr inbounds (" + lenString + ", " + lenString + "* @.str.empty , i32 0, i32 0), i8** %" + attrTemp.name);
+                }
+            } else if (attrTemp.typeid.equals("Int") == true) {
+                // Int attribute codegen
+                operandList.add((OpClass)new IntValClass(0));
+                operandList.add((OpClass)new IntValClass(i));
+                printUtil.getElemPtrInstUtil(out, operandType(clsName, true, 0), operandList, res, true, null);
+                TypeMapping ptr = new TypeMapping(TypeMapping.TypeID.INT32PTR);
+                if (attrTemp.value.getClass() != AST.no_expr.class && attrTemp.value.getClass() != AST.new_.class) {
+                    track = visitNodeObject.VisitorPattern(out, printUtil, attrTemp.value, track, clsInfoCG, cl, functionFormalNameList);
+                    printUtil.storeInstUtil(out, new OpClass(track.lastInstructionType, String.valueOf(track.registerVal - 1)), new OpClass(track.lastInstructionType.correspondingPtrType(), attrTemp.name), null);
+                } else {
+                    printUtil.storeInstUtil(out, (OpClass)new IntValClass(0), new OpClass(ptr, attrTemp.name), null);
                 }
             } else {
                 // other cases
                 operandList.add((OpClass)new IntValClass(0));
                 operandList.add((OpClass)new IntValClass(i));
-                printUtil.getElementPtr(out, operandType(clsName, true, 0), operandList, res, true);
+                printUtil.getElemPtrInstUtil(out, operandType(clsName, true, 0), operandList, res, true, null);
                 TypeMapping ptr = operandType(clsName, true, 1);
-                if ((attrTemp.value.getClass() == AST.no_expr.class)) {
-                    String nullType = operandType(attrTemp.typeid, true, 1).name;
-                    out.println("\tstore " + nullType + " null , " + nullType + "* %" + (attrTemp.name));
-                } else {
+                if ((attrTemp.value.getClass() != AST.no_expr.class)) {
                     track = visitNodeObject.VisitorPattern(out, printUtil, attrTemp.value, track, clsInfoCG, cl, functionFormalNameList);
-                    printUtil.storeOp(out, new OpClass(operandType(attrTemp.typeid, true, 1), String.valueOf(track.registerVal - 1)), new OpClass(operandType(attrTemp.typeid, true, 1).correspondingPtrType(), attrTemp.name));
+                    printUtil.storeInstUtil(out, new OpClass(operandType(attrTemp.typeid, true, 1), String.valueOf(track.registerVal - 1)), new OpClass(operandType(attrTemp.typeid, true, 1).correspondingPtrType(), attrTemp.name), null);
+                } else {
+                    out.println("\tstore " + operandType(attrTemp.typeid, true, 1).name + " null , " + operandType(attrTemp.typeid, true, 1).name + "* %" + attrTemp.name);
                 }
             }
+            i++;
         }
-        printUtil.retOp(out, new OpClass(operandType(clsName, true, 1), "this1"));
+        printUtil.returnInstUtil(out, new OpClass(operandType(clsName, true, 1), "this1"), null);
     }
 
     // This method finds the string constants and generates llvm ir for them
@@ -382,7 +379,7 @@ public class GenerateLlvm {
             Codegen.stringToLineNoMapping.put(tempString, Codegen.stringLineNo);
             Codegen.stringLineNo++;
             out.print("@.str." + Codegen.stringToLineNoMapping.get(tempString) + " = private unnamed_addr constant [" + String.valueOf(tempString.length() + 1) + " x i8] c\"");
-            printUtil.escapedString(out, tempString);
+            printUtil.stringEscUtil(out, tempString, null);
             out.println("\\00\"");
         } else if (expr.getClass() == AST.eq.class) {
             // Traverse on both sides of equality
@@ -414,23 +411,21 @@ public class GenerateLlvm {
     }
 
     public void allocateMethodAttributes(PrintWriter out, PrintUtility printUtil, List<OpClass> aList) {
-        OpClass retValue = null, op = null, operatorAddr = null;
-
         // alloca for 'this' operand of method
-        retValue = new OpClass(aList.get(0).type, "this.addr");
-        printUtil.allocaOp(out, aList.get(0).type, retValue);
+        printUtil.allocaInstUtil(out, aList.get(0).type, new OpClass(aList.get(0).type, "this.addr"), null);
 
         // Calling alloca instruction on all method attributes
-        for (int i = 1; i < aList.size(); i++) {
-            retValue = new OpClass(aList.get(i).type, aList.get(i).opName.substring(1) + ".addr");
-            printUtil.allocaOp(out, aList.get(i).type, retValue);
+        int i = 1;
+        while(i < aList.size()) {
+            printUtil.allocaInstUtil(out, aList.get(i).type, new OpClass(aList.get(i).type, aList.get(i).opName.substring(1) + ".addr"), null);
+            i++;
         }
 
         // Calling store instruction on all method attributes
-        for (int i = 1; i < aList.size(); i++ ) {
-            op = new OpClass(aList.get(i).type, aList.get(i).opName.substring(1));
-            operatorAddr = new OpClass(aList.get(i).type.correspondingPtrType(), aList.get(i).opName.substring(1) + ".addr");
-            printUtil.storeOp(out, op, operatorAddr);
+        i = 1;
+        while(i < aList.size()) {
+            printUtil.storeInstUtil(out, new OpClass(aList.get(i).type, aList.get(i).opName.substring(1)), new OpClass(aList.get(i).type.correspondingPtrType(), aList.get(i).opName.substring(1) + ".addr"), null);
+            i++ ;
         }
     }
 
@@ -439,11 +434,11 @@ public class GenerateLlvm {
         for(AST.class_ cl : AST.program.classes) {
             if(cl.name.equals("Main")) {
                 // The current class is Main
-                printUtil.define(out, new TypeMapping(TypeMapping.TypeID.INT32), "main", new ArrayList<OpClass>());
-                printUtil.allocaOp(out, operandType("Main", true, 0), new OpClass(operandType("Main", true, 1), "obj"));
+                printUtil.generateDefUtil(out, new TypeMapping(TypeMapping.TypeID.INT32), "main", new ArrayList<OpClass>(), null);
+                printUtil.allocaInstUtil(out, operandType("Main", true, 0), new OpClass(operandType("Main", true, 1), "obj"), null);
                 List<OpClass> operandList = new ArrayList<OpClass>();
                 operandList.add(new OpClass(operandType("Main", true, 1), "obj"));
-                printUtil.callOp(out, new ArrayList<TypeMapping>(), "Main_Cons_Main", true, operandList, new OpClass(operandType("Main", true, 1), "obj1"));
+                printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "Main_Cons_Main", true, operandList, new OpClass(operandType("Main", true, 1), "obj1"), null);
                 operandList.set(0, new OpClass(operandType("Main", true, 1), "obj1"));
                 
                 // // We are finding main method in the Main class
@@ -461,32 +456,46 @@ public class GenerateLlvm {
                     }
                 }
                 
-                printUtil.callOp(out, new ArrayList<TypeMapping>(), "Main_main", true, operandList, new OpClass(tempTypeMappingObject, "0"));
-                printUtil.retOp(out, (OpClass)new IntValClass(0));
+                printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "Main_main", true, operandList, new OpClass(tempTypeMappingObject, "0"), null);
+                printUtil.returnInstUtil(out, (OpClass)new IntValClass(0), null);
             }
 
+            int flag = 0;
             // If class is a predefined COOL class, we only need to generate code for their methods only
-            if (cl.name.equals("Int") || cl.name.equals("String") || cl.name.equals("Bool") || cl.name.equals("Object") || cl.name.equals("IO")) {
-                if (cl.name.equals("String")) {
+            switch(cl.name) {
+                case "String":
                     generateStringMethods(out, printUtil, "length");
                     generateStringMethods(out, printUtil, "concat");
                     generateStringMethods(out, printUtil, "substr");
                     generateStringMethods(out, printUtil, "copy");
                     generateStringMethods(out, printUtil, "strcmp");
-                } else if (cl.name.equals("Object")) {
+                    flag = 1;
+                    break;
+                case "Object":
                     generateObjectMethods(out, printUtil, "abort");
-                    printUtil.typeDefine(out, cl.name, new ArrayList<TypeMapping>());
+                    printUtil.classTypeUtil(out, cl.name, new ArrayList<TypeMapping>(), null);
                     generateConstructorOfClass(out, printUtil, cl.name, new InstructionInfo(), cl, clsInfoCG, functionFormalNameList);
-                } else if (cl.name.equals("IO")) {
+                    flag = 1;
+                    break;
+                case "IO":
                     generateIOMethods(out, printUtil, "in_int");
                     generateIOMethods(out, printUtil, "in_string");
                     generateIOMethods(out, printUtil, "out_int");
                     generateIOMethods(out, printUtil, "out_string");
-                    printUtil.typeDefine(out, cl.name, new ArrayList<TypeMapping>());
+                    printUtil.classTypeUtil(out, cl.name, new ArrayList<TypeMapping>(), null);
                     generateConstructorOfClass(out, printUtil, cl.name, new InstructionInfo(), cl, clsInfoCG, functionFormalNameList);
-                }
-                continue;
+                    flag = 1;
+                    break;
+                case "Int":
+                    flag = 1;
+                    break;
+                case "Bool":
+                    flag = 1;
+                    break;
             }
+            
+            if(flag == 1)
+                continue;
 
             // Traverse over the attributes of the class and generate code for them
             List<TypeMapping> attrTypesList = new ArrayList<TypeMapping>();
@@ -498,7 +507,7 @@ public class GenerateLlvm {
                 }
             }
             // Generates the define code for attributes of class
-            printUtil.typeDefine(out, cl.name, attrTypesList);
+            printUtil.classTypeUtil(out, cl.name, attrTypesList, null);
 
             // Generating code for assignment of type names
             generateConstructorOfClass(out, printUtil, cl.name, new InstructionInfo(), cl, clsInfoCG, functionFormalNameList);
@@ -534,25 +543,22 @@ public class GenerateLlvm {
                 } else {
                     mthdType = operandType(mthdTemp.typeid, true, 0);
                 }
-                printUtil.define(out, mthdType, mthdMangledName, argsList);
+                printUtil.generateDefUtil(out, mthdType, mthdMangledName, argsList, null);
 
                 // Generating code for retval
                 TypeMapping mthdRetType = operandType(mthdTemp.typeid, true, 0);
                 if(mthdTemp.typeid.equals("Object") == false) {
                     OpClass retMthdVal = new OpClass(operandType(mthdTemp.typeid, true, 0), "retval");
-                    printUtil.allocaOp(out, operandType(mthdTemp.typeid, true, 0), retMthdVal);
+                    printUtil.allocaInstUtil(out, operandType(mthdTemp.typeid, true, 0), retMthdVal, null);
                 }
 
                 // Generating the alloca instructions for argsList
                 allocateMethodAttributes(out, printUtil, argsList);
 
                 BasicClassBlockCG currentClass = clsInfoCG.cls.get(cl.name);
-                TypeMapping singlePtr = operandType(cl.name, true, 1);
-                TypeMapping doublePtr = operandType(cl.name, true, 2);
-                OpClass op = new OpClass(singlePtr, "this");
-                OpClass opAddr = new OpClass(doublePtr, "this" + ".addr");
-                printUtil.storeOp(out, op, opAddr);
-                printUtil.loadOp(out, singlePtr, opAddr, new OpClass(singlePtr, "this1"));
+                TypeMapping singlePtr = operandType(cl.name, true, 2);
+                printUtil.storeInstUtil(out, new OpClass(operandType(cl.name, true, 1), "this"), new OpClass(operandType(cl.name, true, 2), "this" + ".addr"), null);
+                printUtil.loadInstUtil(out, operandType(cl.name, true, 1), new OpClass(operandType(cl.name, true, 2), "this" + ".addr"), new OpClass(operandType(cl.name, true, 1), "this1"), null);
 
                 for(int i=0; i<currentClass.attrList.size(); i++) {
                     for(String elem : functionFormalNameList) {
@@ -566,7 +572,7 @@ public class GenerateLlvm {
                     opList.add(new OpClass(operandType(cl.name, true, 1), "this1"));
                     opList.add((OpClass)new IntValClass(0));
                     opList.add((OpClass)new IntValClass(i));
-                    printUtil.getElementPtr(out, operandType(cl.name, true, 0), opList, result, true);
+                    printUtil.getElemPtrInstUtil(out, operandType(cl.name, true, 0), opList, result, true, null);
                 }
 
                 // Class Name of current class
@@ -574,58 +580,60 @@ public class GenerateLlvm {
                 // For every method resetting The value of nested if and loop
                 nestedIfCount = 0;
                 nestedLoopCount = 0;
-                // Reinitializing the register count to zero for each method
-                registerCounter.registerVal = 0;
-                // Reinitializing the last instruction's type to method return type for each method
-                registerCounter.lastInstructionType = mthdRetType;
-                // Entry is the first label of every method
-                registerCounter.lastBasicBlockName = "%entry";
+                
+                /* 
+                    Reinitializing the register count to zero for each method
+                    Reinitializing the last instruction's type to method return type for each method
+                    Entry is the first label of every method
+                */
+                registerCounter.reintialiseToDefault(0, mthdRetType, "%entry");
+                
                 registerCounter = visitNodeObject.VisitorPattern(out, printUtil, mthdTemp.body, registerCounter, clsInfoCG, cl, functionFormalNameList);
                 
                 if(((mthdTemp.body.getClass() != AST.block.class) && (mthdTemp.body.getClass() != AST.loop.class) && (mthdTemp.body.getClass() != AST.cond.class))) {
                     if(registerCounter.registerVal - 1 >= 0 && mthdType.name.equals(registerCounter.lastInstructionType.name) && ((mthdType.name.equals("void")) == false)) {
-                        printUtil.storeOp(out, new OpClass(mthdType, String.valueOf(registerCounter.registerVal - 1)), new cool.OpClass(mthdType.correspondingPtrType(), "retval"));
+                        printUtil.storeInstUtil(out, new OpClass(mthdType, String.valueOf(registerCounter.registerVal - 1)), new cool.OpClass(mthdType.correspondingPtrType(), "retval"), null);
                     }
                 }
 
-                printUtil.branchUncondOp(out, "fun_returning_basic_block");
+                printUtil.brUncoditionUtil(out, "fun_returning_basic_block", null);
                 // Label for dispatch on void fucntion
                 out.println("dispatch_on_void_basic_block:");
-                printUtil.allocaOp(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "err_msg_void_dispatch"));
+                printUtil.allocaInstUtil(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "err_msg_void_dispatch"), null);
                 out.println("\tstore i8* getelementptr inbounds ([47 x i8], [47 x i8]* @staticdispatchonvoiderr, i32 0, i32 0), i8** %err_msg_void_dispatch");
-                printUtil.loadOp(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), new OpClass(new TypeMapping(TypeMapping.TypeID.INT8DOUBLEPTR), "err_msg_void_dispatch"), new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "print_err_msg_void_dispatch"));
+                printUtil.loadInstUtil(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), new OpClass(new TypeMapping(TypeMapping.TypeID.INT8DOUBLEPTR), "err_msg_void_dispatch"), new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "print_err_msg_void_dispatch"), null);
                 List<OpClass> printArguments;
                 printArguments = new ArrayList<OpClass>();
                 printArguments.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "print_err_msg_void_dispatch"));
                 // Invoking out_string of IO to display the error message
-                printUtil.callOp(out, new ArrayList<TypeMapping>(), "IO_out_string", true, printArguments, new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null"));
+                printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "IO_out_string", true, printArguments, new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null"), null);
                 // Aborting after printing the error message
-                printUtil.callOp(out, new ArrayList<TypeMapping>(), "Object_abort", true, new ArrayList<OpClass>(), new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null"));
-                printUtil.branchUncondOp(out, "fun_returning_basic_block");
+                printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "Object_abort", true, new ArrayList<OpClass>(), new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null"), null);
+                printUtil.brUncoditionUtil(out, "fun_returning_basic_block", null);
 
                 // Creating Print and abort labels
                 out.print("func_div_by_zero_abort:\n");
-                printUtil.allocaOp(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "err_msg"));
+                printUtil.allocaInstUtil(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "err_msg"), null);
                 out.print("\tstore i8* getelementptr inbounds ([31 x i8], [31 x i8]* @divby0err, i32 0, i32 0), i8** %err_msg\n");
-                printUtil.loadOp(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), new OpClass(new TypeMapping(TypeMapping.TypeID.INT8DOUBLEPTR), "err_msg"), new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "print_err_msg"));
+                printUtil.loadInstUtil(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), new OpClass(new TypeMapping(TypeMapping.TypeID.INT8DOUBLEPTR), "err_msg"), new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "print_err_msg"), null);
                 printArguments = new ArrayList<>();
                 printArguments.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "print_err_msg"));
                 // Invoking out_string of IO to display the error message
-                printUtil.callOp(out, new ArrayList<TypeMapping>(), "IO_out_string", true, printArguments, new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null"));
+                printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "IO_out_string", true, printArguments, new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null"), null);
                 // Aborting after printing the error message
-                printUtil.callOp(out, new ArrayList<TypeMapping>(), "Object_abort", true, new ArrayList<OpClass>(), new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null"));
-                printUtil.branchUncondOp(out, "fun_returning_basic_block");
+                printUtil.callInstUtil(out, new ArrayList<TypeMapping>(), "Object_abort", true, new ArrayList<OpClass>(), new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null"), null);
+                printUtil.brUncoditionUtil(out, "fun_returning_basic_block", null);
 
                 out.print("fun_returning_basic_block:\n");
                 
                 // Printing the return type of the method
                 if(!mthdTemp.typeid.equals("Object")) {
-                    printUtil.loadOp(out, mthdRetType, new OpClass(mthdRetType.correspondingPtrType(), "retval"), new OpClass(mthdRetType, String.valueOf(registerCounter.registerVal)));
-                    printUtil.retOp(out, new OpClass(mthdRetType, String.valueOf(registerCounter.registerVal)));
+                    printUtil.loadInstUtil(out, mthdRetType, new OpClass(mthdRetType.correspondingPtrType(), "retval"), new OpClass(mthdRetType, String.valueOf(registerCounter.registerVal)), null);
+                    printUtil.returnInstUtil(out, new OpClass(mthdRetType, String.valueOf(registerCounter.registerVal)), null);
                     registerCounter.registerVal = registerCounter.registerVal + 1;
                     
                 } else {
-                    printUtil.retOp(out, new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null"));
+                    printUtil.returnInstUtil(out, new OpClass(new TypeMapping(TypeMapping.TypeID.VOID), "null"), null);
                 }
             }
         }

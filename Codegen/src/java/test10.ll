@@ -1,4 +1,4 @@
-; I am a comment in LLVM-IR. Feel free to remove me.
+; Generated llvm-IR by our COOL-Compiler :)
 source_filename = "test10.cl"
 
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"

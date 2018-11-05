@@ -55,16 +55,24 @@ public class TypeMapping {
         for(int i=0; i<numPointers; i++) {
             if(i == 1)
                 id = TypeID.OBJPTR;
-            if(i == 2)
+                if(i == 2)
                 id = TypeID.OBJDOUBLEPTR;
-            name += "*";
+                name += "*";
+            }
         }
-    }
-    
+        
     // Checks whether a type id is a single or double pointer
+    // This method checks if the id of the TypeMapping object has double pointer or not 
     public boolean isPtr() {
-        return ((id == TypeID.INT1PTR) || (id == TypeID.INT8PTR) ||
-                (id == TypeID.INT32PTR) || (id == TypeID.OBJPTR));
+        if(id != TypeID.INT1PTR)
+            return false;
+        if(id != TypeID.INT8PTR)
+            return false;
+        if(id != TypeID.INT32PTR)
+            return false;
+        if(id != TypeID.OBJPTR)
+            return false;
+        return true;
     }
 
     // This function returns a TypeMapping object corresponding to the pointer type of the current type
@@ -124,8 +132,16 @@ public class TypeMapping {
         return (new TypeMapping(derefPointerType));
     }
 
+    // This method checks if the id of the TypeMapping object has double pointer or not 
     public boolean isDoublePtr() {
-        return ((id == TypeID.INT1DOUBLEPTR) || (id == TypeID.INT8DOUBLEPTR) ||
-                (id == TypeID.INT32DOUBLEPTR) || (id == TypeID.OBJDOUBLEPTR));
+        if(id != TypeID.INT1DOUBLEPTR)
+            return false;
+        if(id != TypeID.INT8DOUBLEPTR)
+            return false;
+        if(id != TypeID.INT32DOUBLEPTR)
+            return false;
+        if(id != TypeID.OBJDOUBLEPTR)
+            return false;
+        return true;
     }
 }

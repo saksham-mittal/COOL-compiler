@@ -13,9 +13,9 @@ public class BoolValClass extends ConstValClass {
         super(new TypeMapping(TypeMapping.TypeID.INT1), "");
         bValParam = bTemp;
         if(bTemp)
-            value = "true";
+            constValue = "true";
         else
-            value = "false";
-        opName = value;
+            constValue = "false";
+        opName = constValue;
     }
 }
