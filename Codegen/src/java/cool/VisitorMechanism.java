@@ -517,22 +517,22 @@ public class VisitorMechanism {
     public void VisitNode(AST.comp comp, ClassInfo clsInfo, ScopeTable<AST.attr> scpTbl) {
         // visiting the expression to be complimented 
         VisitNode(comp.e1, clsInfo, scpTbl);
-        if(comp.e1.type.equals("Int") == false) {
-            // Checking if the expression to be complimented is of type Int
-            reportError.report(filename, comp.lineNo, "In the compliment, argument must have type Int instead of type '" + comp.e1.type + "'.");
+        if(comp.e1.type.equals("Bool") == false) {
+            // Checking if the expression to be complimented is of type Bool
+            reportError.report(filename, comp.lineNo, "In the compliment, argument must have type Bool instead of type '" + comp.e1.type + "'.");
         }
-        comp.type = "Int";
+        comp.type = "Bool";
     }
 
     // visiting negation expression in AST ( ~ expression )
     public void VisitNode(AST.neg neg, ClassInfo clsInfo, ScopeTable<AST.attr> scpTbl) {
         // visiting the expression to be negated 
         VisitNode(neg.e1, clsInfo, scpTbl);
-        if(neg.e1.type.equals("Bool") == false) {
-            // Checking if the expression to be negated is of type Bool
-            reportError.report(filename, neg.lineNo, "In the negation, argument must have type 'Bool' instead of type '" + neg.e1.type + "'.");
+        if(neg.e1.type.equals("Int") == false) {
+            // Checking if the expression to be negated is of type Int
+            reportError.report(filename, neg.lineNo, "In the negation, argument must have type 'Int' instead of type '" + neg.e1.type + "'.");
         }
-        neg.type = "Bool";
+        neg.type = "Int";
     }
 
     // visiting Objectid expression ( ID )

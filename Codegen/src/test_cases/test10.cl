@@ -1,36 +1,39 @@
--- Program to demonstrate multi class programs with static dispatch and new.
+-- Program to demonstrate the capabilities of complement, negation, addition
+-- subtraction, multiplication, division, equality and a simple if-then-else
+-- with attribute initialization and IO methods
 
 class Main {
-	a : XYZ <- new XYZ;
-	b : IO <- new IO;
-	c : Int <- new Int;
-	main () : Object {
-		{
-			b@IO.out_string("Static Dispatch 1");
-			b@IO.out_string(a@XYZ.do_that("a", a));
-		}
-	};
-};
+	i : Int;
+    k : Bool <- true;
+    j : String <- "cs3423";
+	l : IO <- new IO;
 
-class XYZ inherits IO {
-	a : Int <- 4 + 5;
-	b : Bool;
-	c : String <- "CS3423";
-	d : IO <- new IO;
-	do_this(i : Int, j: String, k: Bool) : String {
-		{
-			i <- i / 8;
-			d@IO.out_string("Enter something:\n");
-			c <- d@IO.in_string();
-            d@IO.out_string(c);
-			j;
-		}
-	};
-	
-	do_that(a1: String, b1: XYZ) : String {
-		{
-			a1 <- b1@XYZ.do_this(1, a1, false);
-			a1 <- b1@XYZ.do_this(2, a1, true);
+	main() : Object {
+        {
+            l@IO.out_string("Enter int : ");
+            i <- l@IO.in_int();
+            i <- i * 8 + 9 * 7;
+            i <- ~i;
+			i <- i/3 - 4;
+			k <- not k;
+			k <- not k;
+			k <- "cs3423" = j;
+			if k 
+				then l@IO.out_string("CS3423")
+				else l@IO.out_string("The computer has some serious problems")
+			fi;
+			
+			k <- 3 < 2;
+			if k
+				then l@IO.out_string("The computer has some really serious problem")
+				else l@IO.out_string("Good boy")
+			fi;
+
+			k <- 5 <= 5;
+			if k
+				then l@IO.out_string("That was a trick question")
+				else l@IO.out_string("Oh oh")
+			fi;
 		}
 	};
 };
