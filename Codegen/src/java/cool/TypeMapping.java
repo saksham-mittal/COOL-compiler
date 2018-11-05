@@ -51,13 +51,13 @@ public class TypeMapping {
     public TypeMapping(String n, int numPointers) {
         id = TypeID.OBJ;
         name = "%" + n;
-        // Pointer to an object
-        if (numPointers == 1) {
-            id = TypeID.OBJPTR;
+        // Adding Pointers to the name of operand
+        for(int i=0; i<numPointers; i++) {
+            if(i == 1)
+                id = TypeID.OBJPTR;
+            if(i == 2)
+                id = TypeID.OBJDOUBLEPTR;
             name += "*";
-        } else if(numPointers == 2) {
-            id = TypeID.OBJDOUBLEPTR;
-            name += "**";
         }
     }
     

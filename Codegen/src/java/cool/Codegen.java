@@ -13,6 +13,8 @@ public class Codegen{
 	// The class for storing class information (its attributes and methods)
 	public static ClassInfoCG clsInfoCG;
 
+	// This Hashmap maps each string constant to the line number it comes on
+	// This helps for giving @.str numbers to the string constants 
 	public static HashMap<String, Integer> stringToLineNoMapping;
 
 	public static Integer stringLineNo;
@@ -35,10 +37,12 @@ public class Codegen{
 	
 		printUtil = new PrintUtility();
 
+		// Instantiating stringToLineMapping hashmap 
 		stringToLineNoMapping = new HashMap<String, Integer>();
 
 		stringLineNo = 0;
 
+		// Instanstating GenerateLlvm object
 		gl = new GenerateLlvm();
 
 		// This prints the declaration of standard methods of String, Int, Bool, IO and Object classes 

@@ -108,7 +108,7 @@ public class GenerateLlvm {
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "memnew");
             args = new ArrayList<OpClass>();
-            args.add((OpClass)new IntValue(1024));
+            args.add((OpClass)new IntValClass(1024));
             printUtil.callOp(out, new ArrayList<TypeMapping>(), "malloc", true, args, retValue);
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "copystring");
@@ -135,7 +135,7 @@ public class GenerateLlvm {
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "0");
             args = new ArrayList<OpClass>();
-            args.add((OpClass)new IntValue(1024));
+            args.add((OpClass)new IntValClass(1024));
             printUtil.callOp(out, new ArrayList<TypeMapping>(), "malloc", true, args, retValue);
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "1");
@@ -167,7 +167,7 @@ public class GenerateLlvm {
             args.add(new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "start"));
             printUtil.callOp(out, new ArrayList<TypeMapping>(), "strcmp", true, args, retValue);
 
-            printUtil.compareOp(out, "EQ", retValue, (OpClass)new IntValue(0), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), "1"));
+            printUtil.compareOp(out, "EQ", retValue, (OpClass)new IntValClass(0), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), "1"));
 
             printUtil.retOp(out, new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), "1"));
         }
@@ -224,7 +224,7 @@ public class GenerateLlvm {
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "retval");
             args = new ArrayList<OpClass>();
-            args.add((OpClass)new IntValue(1024));
+            args.add((OpClass)new IntValClass(1024));
             printUtil.callOp(out, new ArrayList<TypeMapping>(), "malloc", true, args, retValue);
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), "1");
@@ -245,7 +245,7 @@ public class GenerateLlvm {
 
             retValue = new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), "1");
             args = new ArrayList<OpClass>();
-            args.add((OpClass)new IntValue(4));
+            args.add((OpClass)new IntValClass(4));
             printUtil.callOp(out, new ArrayList<TypeMapping>(), "malloc", true, args, retValue);
 
             out.println("\t%2 = bitcast i8* %1 to i32*");
@@ -320,20 +320,20 @@ public class GenerateLlvm {
         
             if (attrTemp.typeid.equals("Int")) {
                 // Int attribute codegen
-                operandList.add((OpClass)new IntValue(0));
-                operandList.add((OpClass)new IntValue(i));
+                operandList.add((OpClass)new IntValClass(0));
+                operandList.add((OpClass)new IntValClass(i));
                 printUtil.getElementPtr(out, operandType(clsName, true, 0), operandList, res, true);
                 TypeMapping ptr = new TypeMapping(TypeMapping.TypeID.INT32PTR);
                 if (attrTemp.value.getClass() == AST.no_expr.class || attrTemp.value.getClass() == AST.new_.class) {
-                    printUtil.storeOp(out, (OpClass)new IntValue(0), new OpClass(ptr, attrTemp.name));
+                    printUtil.storeOp(out, (OpClass)new IntValClass(0), new OpClass(ptr, attrTemp.name));
                 } else {
                     track = visitNodeObject.VisitorPattern(out, printUtil, attrTemp.value, track, clsInfoCG, cl, functionFormalNameList);
                     printUtil.storeOp(out, new OpClass(track.lastInstructionType, String.valueOf(track.registerVal - 1)), new OpClass(track.lastInstructionType.correspondingPtrType(), attrTemp.name));
                 }
             } else if (attrTemp.typeid.equals("String")) {
                 // String attribute codegen
-                operandList.add((OpClass)new IntValue(0));
-                operandList.add((OpClass)new IntValue(i));
+                operandList.add((OpClass)new IntValClass(0));
+                operandList.add((OpClass)new IntValClass(i));
                 printUtil.getElementPtr(out, operandType(clsName, true, 0), operandList, res, true);
                 String lenString = null;
                 if (attrTemp.value.getClass() == AST.no_expr.class || attrTemp.value.getClass() == AST.new_.class) {
@@ -345,20 +345,20 @@ public class GenerateLlvm {
                 }
             } else if (attrTemp.typeid.equals("Bool")) {
                 // Bool attribute codegen
-                operandList.add((OpClass)new IntValue(0));
-                operandList.add((OpClass)new IntValue(i));
+                operandList.add((OpClass)new IntValClass(0));
+                operandList.add((OpClass)new IntValClass(i));
                 printUtil.getElementPtr(out, operandType(clsName, true, 0), operandList, res, true);
                 TypeMapping ptr = new TypeMapping(TypeMapping.TypeID.INT1PTR);
                 if (attrTemp.value.getClass() == AST.no_expr.class || attrTemp.value.getClass() == AST.new_.class) {
-                    printUtil.storeOp(out, (OpClass)new BoolValue(false), new OpClass(ptr, attrTemp.name));
+                    printUtil.storeOp(out, (OpClass)new BoolValClass(false), new OpClass(ptr, attrTemp.name));
                 } else {
                     track = visitNodeObject.VisitorPattern(out, printUtil, attrTemp.value, track, clsInfoCG, cl, functionFormalNameList);
                     printUtil.storeOp(out, new OpClass(track.lastInstructionType, String.valueOf(track.registerVal - 1)), new OpClass(track.lastInstructionType.correspondingPtrType(), attrTemp.name));
                 }
             } else {
                 // other cases
-                operandList.add((OpClass)new IntValue(0));
-                operandList.add((OpClass)new IntValue(i));
+                operandList.add((OpClass)new IntValClass(0));
+                operandList.add((OpClass)new IntValClass(i));
                 printUtil.getElementPtr(out, operandType(clsName, true, 0), operandList, res, true);
                 TypeMapping ptr = operandType(clsName, true, 1);
                 if ((attrTemp.value.getClass() == AST.no_expr.class)) {
@@ -434,6 +434,7 @@ public class GenerateLlvm {
         }
     }
 
+    // This is for generating code c functions (c main method, c string and io methods, etc)
     public void generateIrForClasses(AST.program program, ClassInfoCG clsInfoCG, PrintUtility printUtil, PrintWriter out, List<String> functionFormalNameList) {
         for(AST.class_ cl : AST.program.classes) {
             if(cl.name.equals("Main")) {
@@ -445,20 +446,23 @@ public class GenerateLlvm {
                 printUtil.callOp(out, new ArrayList<TypeMapping>(), "Main_Cons_Main", true, operandList, new OpClass(operandType("Main", true, 1), "obj1"));
                 operandList.set(0, new OpClass(operandType("Main", true, 1), "obj1"));
                 
-                // We are finding main method in the Main class
+                // // We are finding main method in the Main class
                 TypeMapping tempTypeMappingObject = new TypeMapping(TypeMapping.TypeID.EMPTY);
                 for(AST.feature ftre : cl.features) {
                     if(ftre.getClass() == AST.method.class) {
                         AST.method mthdTemp = (AST.method)ftre;
                         if(mthdTemp.name.equals("main")) {
-                            tempTypeMappingObject = operandType(mthdTemp.typeid, true, 0);
+                            if(mthdTemp.typeid.equals("Object"))
+                                tempTypeMappingObject = new TypeMapping(TypeMapping.TypeID.VOID);
+                            else
+                                tempTypeMappingObject = operandType(mthdTemp.typeid, true, 0);
                             break;
                         }
                     }
                 }
                 
                 printUtil.callOp(out, new ArrayList<TypeMapping>(), "Main_main", true, operandList, new OpClass(tempTypeMappingObject, "0"));
-                printUtil.retOp(out, (OpClass)new IntValue(0));
+                printUtil.retOp(out, (OpClass)new IntValClass(0));
             }
 
             // If class is a predefined COOL class, we only need to generate code for their methods only
@@ -560,8 +564,8 @@ public class GenerateLlvm {
                     List<OpClass> opList = new ArrayList<OpClass>();
                     OpClass result = new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), currentClass.attrList.get(i).name);
                     opList.add(new OpClass(operandType(cl.name, true, 1), "this1"));
-                    opList.add((OpClass)new IntValue(0));
-                    opList.add((OpClass)new IntValue(i));
+                    opList.add((OpClass)new IntValClass(0));
+                    opList.add((OpClass)new IntValClass(i));
                     printUtil.getElementPtr(out, operandType(cl.name, true, 0), opList, result, true);
                 }
 
@@ -570,6 +574,9 @@ public class GenerateLlvm {
                 // For every method resetting The value of nested if and loop
                 nestedIfCount = 0;
                 nestedLoopCount = 0;
+                // Reinitializing the register count to zero for each method
+                registerCounter.registerVal = 0;
+                // Reinitializing the last instruction's type to method return type for each method
                 registerCounter.lastInstructionType = mthdRetType;
                 // Entry is the first label of every method
                 registerCounter.lastBasicBlockName = "%entry";

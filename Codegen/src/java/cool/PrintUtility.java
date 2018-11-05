@@ -20,7 +20,7 @@ public class PrintUtility {
         }   
     }
     
-    void initConstant(PrintWriter out, String name, ConstValue op) {
+    void initConstant(PrintWriter out, String name, ConstValClass op) {
         out.print("@" + name + " = ");
         out.print("constant " + op.type.name + " ");
         if (op.type.id == TypeMapping.TypeID.INT8) {
@@ -124,7 +124,7 @@ public class PrintUtility {
     }
     
     void branchUncondOp(PrintWriter out, String label) {
-        out.print("\tbr label %" + label + "\n");
+        out.print("\tbr label %" + label + "\n\n");
     }
     
     void compareOp(PrintWriter out, String cond, OpClass op1, OpClass op2, OpClass result) {
@@ -141,10 +141,11 @@ public class PrintUtility {
     
     void callOp(PrintWriter out, List<TypeMapping> argTypes, String funcName, boolean isGlobal, List<OpClass> args, OpClass resultOp) {
         out.print("\t");
-        if (resultOp.type.id != TypeMapping.TypeID.VOID) {
-            out.print(resultOp.opName + " = ");
-        }
-        out.print("call " + resultOp.type.name);
+        if (resultOp.type.id == TypeMapping.TypeID.VOID) {
+            out.print("call " + resultOp.type.name);
+        } else 
+            out.print(resultOp.opName + " = call " + resultOp.type.name);
+            
         if (argTypes.size() > 0) {
             out.print(" (");
         for (int i = 0; i < argTypes.size(); i++) {

@@ -46,6 +46,21 @@ public class VisitNodeClass {
         return (objName + ".addr");
     }
 
+    // This method returns an object of TypeMapping class for the return type of method
+    public TypeMapping returnTypeOfMethod(String methodClassName, String methodName, ClassInfoCG clsInfoCG, AST.class_ cl) {
+        // Iterating over the methods of all class list
+        for(AST.method mthdTemp : clsInfoCG.cls.get(methodClassName).mthdList) {
+            if(mthdTemp.name.equals(methodName)) {
+                // We found the required method
+                if(mthdTemp.typeid.equals("Object")) {
+                    return (new TypeMapping(TypeMapping.TypeID.VOID));
+                }
+                return operandType(mthdTemp.typeid, true, 1);
+            }
+        }
+        return (new TypeMapping(TypeMapping.TypeID.VOID));
+    }
+
     public InstructionInfo VisitorPattern(PrintWriter out, PrintUtility printUtil, AST.expression expr, InstructionInfo registerCounter, ClassInfoCG clsInfoCG, AST.class_ cl, List<String> functionFormalNameList) {
         if(expr.getClass() == AST.assign.class) {
             return VisitNode(out, printUtil, (AST.assign)expr, registerCounter, clsInfoCG, cl, functionFormalNameList);
@@ -98,7 +113,45 @@ public class VisitNodeClass {
     }
 
     public InstructionInfo VisitNode(PrintWriter out, PrintUtility printUtil, AST.static_dispatch exprStd, InstructionInfo registerCounter, ClassInfoCG clsInfoCG, AST.class_ cl, List<String> functionFormalNameList) {
-        return registerCounter;
+        // Generating for Static dispatch
+        // which is of type <expr>@<type>.id(<expr>,...,<expr>)
+        String exprStdType = exprStd.typeid;
+        String exprStdCallee;
+        List<OpClass> argumentList = new ArrayList<OpClass>();
+        String mangledFunctionName = exprStd.typeid + "_" + exprStd.name;
+        
+        if((exprStdType.equals("Int") || exprStdType.equals("Bool") || exprStdType.equals("String")) == false) {
+            registerCounter = VisitorPattern(out, printUtil, exprStd.caller, registerCounter, clsInfoCG, cl, functionFormalNameList);
+            exprStdCallee = registerCounter.lastInstructionType.name;
+
+            out.print("\t%" + registerCounter.registerVal + " = icmp eq " + exprStdCallee + " null, %" + (registerCounter.registerVal - 1) + "\n");
+            printUtil.branchCondOp(out, new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), String.valueOf(registerCounter.registerVal)), "dispatch_on_void_basic_block", "proceed_" + registerCounter.registerVal);
+        
+            out.print("\nproceed_" + registerCounter.registerVal + ":\n");
+            registerCounter.registerVal = registerCounter.registerVal + 1;
+            registerCounter.lastBasicBlockName = "proceed_" + registerCounter.registerVal + ":";
+        }
+
+        // Adding method arguments to 'argumentList'
+        for(AST.expression exp : exprStd.actuals) {
+            registerCounter = VisitorPattern(out, printUtil, exp, registerCounter, clsInfoCG, cl, functionFormalNameList);
+            argumentList.add(new OpClass(registerCounter.lastInstructionType, String.valueOf(registerCounter.registerVal - 1)));
+        }
+
+        // Calling VisitorPattern on caller expression
+        registerCounter = VisitorPattern(out, printUtil, exprStd.caller, registerCounter, clsInfoCG, cl, functionFormalNameList);
+
+        // Adding this pointer to classes other than IO
+        if(exprStd.typeid.equals("IO") == false)
+            // Adding the 'this' pointer argument to the beggining of the list
+            argumentList.add(0, new OpClass(registerCounter.lastInstructionType, String.valueOf(registerCounter.registerVal - 1)));
+        
+        printUtil.callOp(out, new ArrayList<TypeMapping>(), mangledFunctionName, true, argumentList, new OpClass(returnTypeOfMethod(exprStd.typeid, exprStd.name, clsInfoCG, cl), String.valueOf(registerCounter.registerVal)));
+
+        if((new OpClass(returnTypeOfMethod(exprStd.typeid, exprStd.name, clsInfoCG, cl), String.valueOf(registerCounter.registerVal))).type.id.equals(TypeMapping.TypeID.VOID))
+            return new InstructionInfo(registerCounter.registerVal, returnTypeOfMethod(exprStd.typeid, exprStd.name, clsInfoCG, cl), registerCounter.lastBasicBlockName);
+        else
+            return new InstructionInfo(registerCounter.registerVal + 1, returnTypeOfMethod(exprStd.typeid, exprStd.name, clsInfoCG, cl), registerCounter.lastBasicBlockName);
     }
 
     public InstructionInfo VisitNode(PrintWriter out, PrintUtility printUtil, AST.cond exprCond, InstructionInfo registerCounter, ClassInfoCG clsInfoCG, AST.class_ cl, List<String> functionFormalNameList) {
@@ -133,7 +186,7 @@ public class VisitNodeClass {
         phiNode1 = " [ %" + (thenBlock.registerVal - 1) + ", " + (thenBlock.lastBasicBlockName) + " ]";
         phiNode2 = " [ %" + (elseBlock.registerVal - 1) + ", " + (elseBlock.lastBasicBlockName) + " ]";
 
-        out.println(" %" + elseBlock.registerVal + " = phi" + conditionType.name + phiNode1 + " , " + phiNode2);
+        out.println("\t%" + elseBlock.registerVal + " = phi " + conditionType.name + phiNode1 + ", " + phiNode2);
 
         if(elseBlock.registerVal >= 0 && GenerateLlvm.mthdType.name.equals(elseBlock.lastInstructionType.name) && ((GenerateLlvm.mthdType.name.equals("void")) == false)) {
             printUtil.storeOp(out, new OpClass(GenerateLlvm.mthdType, String.valueOf(elseBlock.registerVal)), new cool.OpClass(GenerateLlvm.mthdType.correspondingPtrType(), "retval"));
@@ -178,7 +231,40 @@ public class VisitNodeClass {
     }
 
     public InstructionInfo VisitNode(PrintWriter out, PrintUtility printUtil, AST.new_ exprNew, InstructionInfo registerCounter, ClassInfoCG clsInfoCG, AST.class_ cl, List<String> functionFormalNameList) {
-        return registerCounter;
+        // Generating code for new statements
+        // which is of the form, expr ::= new ID
+
+        /* 
+            Gnerating for predefined classes
+        */
+        if(exprNew.typeid.equals("String")) {
+            // The length of a new string is 1
+            String stringLengthIr = "[" + 1 + " x i8]";
+            printUtil.allocaOp(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), new OpClass(new TypeMapping(TypeMapping.TypeID.INT8PTR), String.valueOf(registerCounter.registerVal)));
+            out.print("\tstore i8* getelementptr inbounds (" + stringLengthIr + ", " + stringLengthIr + "* @.str.empty, i32 0, i32 0), i8** %" + String.valueOf(registerCounter.registerVal) + "\n");
+            printUtil.loadOp(out, new TypeMapping(TypeMapping.TypeID.INT8PTR), new OpClass((new TypeMapping(TypeMapping.TypeID.INT8PTR)).correspondingPtrType(), String.valueOf(registerCounter.registerVal)), new OpClass((new TypeMapping(TypeMapping.TypeID.INT8PTR)), String.valueOf(registerCounter.registerVal + 1)));
+            return new InstructionInfo(registerCounter.registerVal + 2, new TypeMapping(TypeMapping.TypeID.INT8PTR), registerCounter.lastBasicBlockName);
+        } else if(exprNew.typeid.equals("Bool")) {
+            printUtil.allocaOp(out, new TypeMapping(TypeMapping.TypeID.INT1), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), String.valueOf(registerCounter.registerVal)));
+            printUtil.storeOp(out, (OpClass)new BoolValClass(false), new OpClass((new TypeMapping(TypeMapping.TypeID.INT1)).correspondingPtrType(), String.valueOf(registerCounter.registerVal)));
+            printUtil.loadOp(out, new TypeMapping(TypeMapping.TypeID.INT1), new OpClass((new TypeMapping(TypeMapping.TypeID.INT1)).correspondingPtrType(), String.valueOf(registerCounter.registerVal)), new OpClass((new TypeMapping(TypeMapping.TypeID.INT1)), String.valueOf(registerCounter.registerVal + 1)));
+            return new InstructionInfo(registerCounter.registerVal + 2, new TypeMapping(TypeMapping.TypeID.INT1), registerCounter.lastBasicBlockName);
+        } else if(exprNew.typeid.equals("Int")) {
+            printUtil.allocaOp(out, new TypeMapping(TypeMapping.TypeID.INT32), new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), String.valueOf(registerCounter.registerVal)));
+            printUtil.storeOp(out, (OpClass)new IntValClass(0), new OpClass((new TypeMapping(TypeMapping.TypeID.INT32)).correspondingPtrType(), String.valueOf(registerCounter.registerVal)));
+            printUtil.loadOp(out, new TypeMapping(TypeMapping.TypeID.INT32), new OpClass((new TypeMapping(TypeMapping.TypeID.INT32)).correspondingPtrType(), String.valueOf(registerCounter.registerVal)), new OpClass((new TypeMapping(TypeMapping.TypeID.INT32)), String.valueOf(registerCounter.registerVal + 1)));
+            return new InstructionInfo(registerCounter.registerVal + 2, new TypeMapping(TypeMapping.TypeID.INT32), registerCounter.lastBasicBlockName);
+        }
+
+        // Generating for other classes
+        printUtil.allocaOp(out, operandType(exprNew.typeid, true, 0), new OpClass(operandType(exprNew.typeid, true, 0), String.valueOf(registerCounter.registerVal)));
+        List<OpClass> operandList;
+        operandList = new ArrayList<OpClass>();
+        
+        TypeMapping constructorOperandType = operandType(exprNew.typeid, true, 1);
+        operandList.add(new OpClass(constructorOperandType, String.valueOf(registerCounter.registerVal)));
+        printUtil.callOp(out, new ArrayList<TypeMapping>(), exprNew.typeid + "_Cons_" + exprNew.typeid, true, operandList, new OpClass(constructorOperandType, String.valueOf(registerCounter.registerVal + 1)));
+        return new InstructionInfo(registerCounter.registerVal + 2, constructorOperandType, registerCounter.lastBasicBlockName);
     }
 
     public InstructionInfo VisitNode(PrintWriter out, PrintUtility printUtil, AST.plus expr, InstructionInfo registerCounter, ClassInfoCG clsInfoCG, AST.class_ cl, List<String> functionFormalNameList) {
@@ -214,10 +300,10 @@ public class VisitNodeClass {
         InstructionInfo regCount2 = VisitorPattern(out, printUtil, (expr).e2, regCount1, clsInfoCG, cl, functionFormalNameList);
         // In Division we have to check whether the Dividend is a number different than  Zero or not
         String regCount2Str = String.valueOf(regCount2.registerVal - 1);
-        printUtil.compareOp(out, "EQ", new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), regCount2Str), (OpClass)new IntValue(0), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), "comp_" + String.valueOf(regCount2.registerVal - 1) + "_0"));
+        printUtil.compareOp(out, "EQ", new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), regCount2Str), (OpClass)new IntValClass(0), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), "comp_" + String.valueOf(regCount2.registerVal - 1) + "_0"));
         printUtil.branchCondOp(out, new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), "comp_" + regCount2Str + "_0"), "func_div_by_zero_abort", "proceed_" + regCount2Str + "_0" );
         // New branch to proceed to
-        out.println("proceed_" + regCount2Str + "_0:");
+        out.println("\nproceed_" + regCount2Str + "_0:");
         printUtil.arithOp(out, "udiv", new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), String.valueOf(regCount1.registerVal - 1 )), new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), String.valueOf(regCount2.registerVal - 1 )), new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), String.valueOf(regCount2.registerVal)));
         
         // returning with proceed as the last Basic Block
@@ -227,7 +313,7 @@ public class VisitNodeClass {
     public InstructionInfo VisitNode(PrintWriter out, PrintUtility printUtil, AST.comp expr, InstructionInfo registerCounter, ClassInfoCG clsInfoCG, AST.class_ cl, List<String> functionFormalNameList) {
         InstructionInfo regCount1 = VisitorPattern(out, printUtil, (expr).e1, registerCounter, clsInfoCG, cl, functionFormalNameList);
         // Taking XOR to perform compliment
-        printUtil.arithOp(out, "xor", new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), String.valueOf(regCount1.registerVal - 1)), (OpClass)new BoolValue(true), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), String.valueOf(regCount1.registerVal)));
+        printUtil.arithOp(out, "xor", new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), String.valueOf(regCount1.registerVal - 1)), (OpClass)new BoolValClass(true), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), String.valueOf(regCount1.registerVal)));
 
         return new InstructionInfo(regCount1.registerVal + 1, new TypeMapping(TypeMapping.TypeID.INT1), regCount1.lastBasicBlockName);
     }
@@ -276,7 +362,7 @@ public class VisitNodeClass {
     public InstructionInfo VisitNode(PrintWriter out, PrintUtility printUtil, AST.neg expr, InstructionInfo registerCounter, ClassInfoCG clsInfoCG, AST.class_ cl, List<String> functionFormalNameList) {
         InstructionInfo regCount1 = VisitorPattern(out, printUtil, (expr).e1, registerCounter, clsInfoCG, cl, functionFormalNameList);
         // Multiplying by -1 for negation
-        printUtil.arithOp(out, "mul", new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), String.valueOf(regCount1.registerVal - 1)), (OpClass)new IntValue(-1), new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), String.valueOf(regCount1.registerVal)));
+        printUtil.arithOp(out, "mul", new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), String.valueOf(regCount1.registerVal - 1)), (OpClass)new IntValClass(-1), new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), String.valueOf(regCount1.registerVal)));
 
         return new InstructionInfo(regCount1.registerVal + 1, new TypeMapping(TypeMapping.TypeID.INT32), regCount1.lastBasicBlockName);
     }
@@ -298,7 +384,7 @@ public class VisitNodeClass {
     public InstructionInfo VisitNode(PrintWriter out, PrintUtility printUtil, AST.int_const expr, InstructionInfo registerCounter, ClassInfoCG clsInfoCG, AST.class_ cl, List<String> functionFormalNameList) {
         // Generating the IR for Int Constants
         printUtil.allocaOp(out, new TypeMapping(TypeMapping.TypeID.INT32), new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), String.valueOf(registerCounter.registerVal)));
-        printUtil.storeOp(out, (OpClass)new IntValue((expr).value), new OpClass(new TypeMapping(TypeMapping.TypeID.INT32PTR), String.valueOf(registerCounter.registerVal)));
+        printUtil.storeOp(out, (OpClass)new IntValClass((expr).value), new OpClass(new TypeMapping(TypeMapping.TypeID.INT32PTR), String.valueOf(registerCounter.registerVal)));
         printUtil.loadOp(out, new TypeMapping(TypeMapping.TypeID.INT32),  new OpClass(new TypeMapping(TypeMapping.TypeID.INT32PTR), String.valueOf(registerCounter.registerVal)), new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), String.valueOf(registerCounter.registerVal + 1)));
         
         return new InstructionInfo(registerCounter.registerVal + 2, new TypeMapping(TypeMapping.TypeID.INT32), registerCounter.lastBasicBlockName);
@@ -317,7 +403,7 @@ public class VisitNodeClass {
     public InstructionInfo VisitNode(PrintWriter out, PrintUtility printUtil, AST.bool_const expr, InstructionInfo registerCounter, ClassInfoCG clsInfoCG, AST.class_ cl, List<String> functionFormalNameList) {
         // Generating the IR for Bool Constants
         printUtil.allocaOp(out, new TypeMapping(TypeMapping.TypeID.INT1), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), String.valueOf(registerCounter.registerVal)));
-        printUtil.storeOp(out, (OpClass)new BoolValue((expr).value), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1PTR), String.valueOf(registerCounter.registerVal)));
+        printUtil.storeOp(out, (OpClass)new BoolValClass((expr).value), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1PTR), String.valueOf(registerCounter.registerVal)));
         printUtil.loadOp(out, new TypeMapping(TypeMapping.TypeID.INT1),  new OpClass(new TypeMapping(TypeMapping.TypeID.INT1PTR), String.valueOf(registerCounter.registerVal)), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), String.valueOf(registerCounter.registerVal + 1)));
         
         return new InstructionInfo(registerCounter.registerVal + 2, new TypeMapping(TypeMapping.TypeID.INT1), registerCounter.lastBasicBlockName);
