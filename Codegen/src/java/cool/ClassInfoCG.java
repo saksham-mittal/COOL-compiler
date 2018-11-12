@@ -4,7 +4,7 @@ import java.util.*;
 import java.io.PrintWriter;
 
 /* 
-    This class stores info of all classses in form of Hashmap,
+    This class stores info of all classes in form of Hashmap,
     which maps the class names to their BasicClassBlockCG objects
 */
 public class ClassInfoCG {

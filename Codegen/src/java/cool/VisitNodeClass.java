@@ -342,7 +342,7 @@ public class VisitNodeClass {
         if(regCount1.lastInstructionType.name.equals((new TypeMapping(TypeMapping.TypeID.INT32)).name)) {
             // If Operands are of type Int
             printUtil.cmpInstUtil(out, "EQ", new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), String.valueOf(regCount1.registerVal - 1)), new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), String.valueOf(regCount2.registerVal - 1)), new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), String.valueOf(regCount2.registerVal)), null);
-        } else if(regCount1.lastInstructionType.name.equals((new TypeMapping(TypeMapping.TypeID.INT32)).name)) {
+        } else if(regCount1.lastInstructionType.name.equals((new TypeMapping(TypeMapping.TypeID.INT1)).name)) {
             // If Operands are of type Bool
             printUtil.cmpInstUtil(out, "EQ", new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), String.valueOf(regCount1.registerVal - 1)), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), String.valueOf(regCount2.registerVal - 1)), new OpClass(new TypeMapping(TypeMapping.TypeID.INT1), String.valueOf(regCount2.registerVal)), null);
         } else if(regCount1.lastInstructionType.name.equals((new TypeMapping(TypeMapping.TypeID.INT8PTR)).name)) {

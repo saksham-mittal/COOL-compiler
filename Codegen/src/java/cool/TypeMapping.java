@@ -62,7 +62,7 @@ public class TypeMapping {
         }
         
     // Checks whether a type id is a single or double pointer
-    // This method checks if the id of the TypeMapping object has double pointer or not 
+    // This method checks if the id of the TypeMapping object has single pointer or not 
     public boolean isPtr() {
         if(id != TypeID.INT1PTR)
             return false;

@@ -1,0 +1,343 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{blindtext}
+
+\usepackage{natbib}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage[T1]{fontenc}
+
+\begin{document}
+
+\title
+{\Huge \textbf{Codegen : CS3423}\\ 
+\huge Code Documentation }
+% Author
+\author{\textsc{Saksham Mittal CS16BTECH110032} \\ 
+\textsc{Shubham Kumar ES16BTECH11028} \\}
+
+\maketitle
+\vspace{350px}
+
+\tableofcontents{}
+\vspace{400px}
+
+\section{Code Overview}
+The code takes in an annotated AST of a COOL program produced by the semantic analyzer and generates an equivalent representation of it in LLVM-IR. The LLVM-IR generated can be compiled with clang to get the output that the COOL program was expected to give.
+The working of the code can be divided into the following parts: \\
+\begin{itemize}
+
+    \item First we generate various declarations that would be present in the IR generated for any COOL program.
+    \item Then we perform some operations to store information that the classes in the COOL program contain including the default classes i.e. Object, IO, Int, String and Bool.
+    \item We then generate IR code for the entrypoint of the code i.e. main() method of IR. The code for the definitions of methods of String, IO and Object classes is also emitted.
+    \item Then IR code for string constants present in the class as assigned values to String attributes and IR code for the constructor of the class is generated.
+    \item Finally, the IR code for the methods of a class is generated along with the string constants present inside the methods. This process also invokes the AST visitor pattern to emit out code for all the expressions inside the method.
+
+\end{itemize}
+
+\section{Class structure}
+\subsection{Codegen.java}
+This is the driver class for our program. The member variables include : 
+\begin{itemize}
+
+    \item \textbf{Object of PrintUtility class :} The class of this object(printUtil) contains methods for printing the IR statements which are used often(like alloca, load, and store, etc.)
+    \item \textbf{Object of GenerateLlvm class :} The class of this object(gl) contains methods for generating llvm-IR code for C methods, methods of predefined classes(abort for IO, out\_string for IO, etc.), constructor of classes, and generating IR for all classes.
+    \item \textbf{Static Object of ClassInfoCG class :} The class of this object(clsInfoCG) iterates over all classes and adds their information like methods and attributes to a Hashmap.
+    \item \textbf{Static Hashmap<String, Integer> stringLineToMapping :}  This maps the string constants to their line numbers so that the llvm-IR code can be generated for those constants
+   
+\end{itemize}
+\\ \\
+The Codegen class performs the following actions in its constructor : 
+\begin{itemize}
+
+    \item Instantiate the printUtil object.
+    \item Instantiate the gl object.
+    \item Call the declareStandardCFunctions() method from GenerateLlvm class. This method generates the code for C methods like strcat(), strcmp(), printf(), scanf() which will be called by the COOL methods. \textbf{[For more info, see the GenerateLlvm class]}.
+    \item Next, it calls the parameterized constructor of ClassInfoCG class, which iterates over all classes and adds their information like methods and attributes to a Hashmap.
+    \item Then, generateLlvmIrForClasses() method of GenerateLlvm class is called. This generates the IR for all classes by iterating over them. \textbf{[For more info, see the GenerateLlvm class]}.
+
+\end{itemize}
+
+\subsection{ClassInfoCG.java}
+This class stores information of all classes in form of Hashmap, which maps the class names to their BasicClassBlockCG objects. It has only one member variable : Hashmap<String, BasicClassBlockCG> cls. This maps class names to all the class related attributes and methods. \\
+\\
+The constructor adds the default classes and their methods to the AST.program.classes list. The default classes include :
+\begin{itemize}
+
+    \item \textbf{Object}
+    \item \textbf{IO}
+    \item \textbf{Int}
+    \item \textbf{Bool}
+    \item \textbf{String}
+
+\end{itemize}
+\\
+Object has methods:
+\begin{itemize}
+
+    \item \textbf{abort() : Object}
+    \item \textbf{type\_name(): String}
+    \item \textbf{copy() : Object}
+
+\end{itemize}
+\\
+IO has methods:
+\begin{itemize}
+
+    \item \textbf{out\_string(x : String) : IO}
+    \item \textbf{out\_int(x : Int) : IO}
+    \item \textbf{in\_string() : String}
+    \item \textbf{in\_int() : Int}
+
+\end{itemize}
+\\
+String has methods :
+\begin{itemize}
+
+    \item \textbf{length() : Int}
+    \item \textbf{concat(s : String) : String}
+    \item \textbf{substr(i : Int, l : Int) : String}
+
+\end{itemize} \\
+Furthur, the class has the method insertClasses(). This method iterates over all classes of AST.program.classes and inserts their attributes and methods to the Hashmap cls.
+
+% \begin{lstlisting}
+% q <- new queue
+% append the start node of n in q
+% while q is not empty do
+%     n <- remove the first element of q
+%     if n is visited
+%         output 'Cycle found!'
+%     mark n as visited
+%     for each edge (n, m) in E do
+%         append m to q
+% \end{lstlisting}
+
+\subsection{TypeMapping.java}
+This class is used almost everywhere as it maps the types specified by COOL language to the types we are going to use in the llvm-IR. The class includes the following members :
+\\
+\begin{itemize}
+
+    \item \textbf{TypeID enum :} The members of this enum are mapped to a String name.
+    \item \textbf{Parameterized constructor 1 :} This constructor takes an Object of class TypeID and assigns the name corresponding to the enum. For eg. INT1PTR is mapped to i8*, and so on.
+    \item \textbf{Parameterized constructor 2 :} This constructor takes a String and assigns the id to be of Object type and adds ‘\%’ to the beginning of the name. This is for used because user defined types/classes are mapped to Object type.
+    \item \textbf{Parameterized constructor 3 :}  This is same as Parameterized constructor 2 but it also takes an int which is for the number of pointers to be added to the string name. This is also for user defined types.
+    \item \textbf{A boolean method isPtr() :} This method checks if the id of the TypeMapping object has single pointer or not.
+    \item \textbf{A boolean method isDoublePtr() :} This method checks if the id of the TypeMapping object has double pointer or not.
+    \item \textbf{correspondingPtrType() method :} This method returns a TypeMapping object corresponding to the pointer type of the current id. For eg. if id is INT32, we return TypeMapping object of id INT32PTR.
+    \item \textbf{dereferencedPtrType() method :} This does the reverse of the above method, i.e. if we id is INT32PTR, we return TypeMapping object of id INT32.
+   
+\end{itemize}
+
+
+\subsection{BasicClassBlockCG.java}
+This is a helper class which contains basic info of a class like :
+\begin{itemize}
+
+    \item Class name
+    \item Parent class name
+    \item Attribute list of class
+    \item Method list of class
+
+\end{itemize}
+
+
+\subsection{InstructionInfo.java}
+This is a helper class containing the following information for an IR instruction :
+\begin{itemize}
+
+    \item Register value used in that instruction
+    \item Type of last instruction which is an object of TypeMapping class
+    \item Name of last basic block
+
+\end{itemize} 
+
+\subsection{OpClass.java}
+This is a helper class for storing operand information. Its constructor takes an object of class TypeMapping and a string and assigns it to Operand's type and name. The name is appended with ‘\%’ in the beginning. There is also an empty constructor which initializes the type with empty and name as empty string.
+
+
+\subsection{GenerateLlvm.java}
+This is one of the important class since all of the functionality of a program is inside its methods. We are able to generate the IR code for all types of expressions inside a method with the help of a utility class called PrintUtility. It has following methods :
+\\
+\begin{itemize}
+
+    \item \textbf{declareStandardCFunctions() :} This method generates code for C format specifiers(\%d, \%s), C String methods(strcat, strcpy, strcmp, strncpy, strlen), C IO methods(printf, scanf), C malloc and exit methods. For each of these methods generateDeclUtil() is called which generates the required llvm-IR. \textbf{[For more info, see the generateDeclUtil() method of PrintUtil class]}.
+    \item \textbf{generateStringMethods() :} This method generates the code for COOL defined string methods, by calling the corresponding C string methods.Code for length, concat, substr, and strcmp methods are generated appropriately.
+    \item \textbf{generateObjectMethods() :} This method generates the llvm-IR code for methods of COOL predefined class Object. The name is mangled in the following manner : Object\_<method-name>. As per writing of this report, we have generated code for only abort method of Object.
+    \item \textbf{generateIOMethods() :} This method generates the llvm-IR code for methods of COOL predefined class IO. The name is mangled in the following manner : IO\_<method-name>. \\ \\
+    The code is generated for following methods :
+    \begin{itemize}
+    
+        \item \textbf{out\_string}
+        \item \textbf{out\_int}
+        \item \textbf{in\_string}
+        \item \textbf{in\_int}
+
+    \end{itemize}
+    \item \textbf{operandType() :} This method an object of class TypeMapping corresponding to the typeid and the number of pointers in the parameters. For non-predefined classes it appends ‘class.’ to the object id \textbf{[For more info of Typemapping constructors, see the TypeMapping class]}.
+    \item \textbf{generateConstructorOfClass() :} This method generates the llvm-IR code corresponding to the definition of constructor of classes. It starts with storing the mangled name of constructor in the form : <class-name>\_Cons<class-name>. The we declare the attrOperandList, which contains the attributes of this class. ‘this’ attribute is added first, because it is present by default. Then we generate the declaration of this constructor by calling generateDeclUtil() method. Then code for alloca, load, and store instructions is called for ‘this’ attribute. Then, we loop over the attributes of the class to generate alloca, store, and load instructions for them. If the attribute is a predefined class(Bool, Int, String) then they are handled separately. \\
+    For each attribute, we check if it is of AST.no\_expr class. If that is the case, we invoke the store instruction there itself, else we call it after calling the VistorPattern on the attribute’s value.\textbf{[For more info of VisitorPattern, see the VisitNodeClass.java]}.In the end, the return instruction for the class is generated.
+
+    \item \textbf{stringProcess() :} This method takes an object of AST.expression class and an object of Integer class which is a counter of the the number of string constants before the current string constant as its arguments. This method then compares the incoming expression with all the possible types of expressions in COOL that can have a string constant involved. It then recurses on the subexpressions involved in the current expression until it reaches an expression of AST.string\_const class. Then it emits the IR code for the string constant with its name mangled with the integer passed to so that each string constant has a unique name. It also takes care of escape characters which may appear in the string.
+    \item \textbf{allocateMethodAttributes() :} This method generates IR code for alloca and store  instructions on all method attributes. It takes an attribute list as one of its parameters.
+    \item \textbf{generateIrForClasses() :} This is one of the most important methods of this class, which is called from Codegen class. It iterates over all classes of AST.program.classes and generates the llvm-IR code for them.
+   
+\end{itemize}
+The class ‘Main’ is handled separately. Firstly, the code for C main method is generated which is the entry point of IR. This main method then invokes the COOL defined main method and Main class constructor in IR. \\ \\
+For other predefined classes of COOL, the appropriate method is called(For eg. generateStringMethods() method for String class). This takes care of generating code for constructor for IO and Object classes also. \\ \\
+Now, we handle the rest of the classes. We start off by iterating over the attributes of the class, and calling the stringProcess() method for capturing the string constants. Then we generate code for the attributes themselves, by calling the classTypeUtil() method of printUtility class. Then, we invoke the generateConstructorOfClass() method which generates the code for Constructor of class and also initialization of attributes. \\ \\
+Next part involves iterating over all methods of this class, and performing the following steps: 
+\begin{itemize}
+
+    \item The first step in generating code for a method is to emit out the IR code for all the string constants present in the given method. This is done with the help of a stringProcess() method.
+    \item The second step in this part is to emit the definition of the method. Firstly, we emit out the define instruction in IR using PrintUtility::generateDefUtil() method. Then we emit out the alloca instructions for the formals of the method using PrintUtility::allocaInstUtil() method. We then go on to check if the names of any of the formals clash with the name of any of the attributes of that class.
+    \item The third step is to visit all the expressions inside a method. Here we initialise an object(registerCounter) of class InstructionInfo. This object keeps track of the register number that was used in the last instruction and updates it accordingly. It also has an attribute which keeps track of the type of last instruction which is an object of class TypeMapping. Also, this object has an member variable to keep track of the last basic block we entered in the IR. We then call the visitor pattern VisitNodeClass::VisitorPattern() method on the body of the current method.
+    \item After the visitor mechanism is complete we perform store operation to store the return value of the function which was being operated.
+    Then the code for run time error message generating labels is generated. These labels are dispatch\_on\_void\_basic\_block and func\_div\_by\_zero\_abort. An error message is printed for both the cases using out\_string() function of IO class and the program is aborted by invoking abort() function of Object class.
+    \item \textbf{attributeAddressOfObj() :} This method returns a string containing the address writing format of IR for a AST.formal list of a method.
+
+\end{itemize} 
+
+
+\subsection{VisitNodeClass.java}
+This class is implementing the visitor mechanism on the generated AST. It has the following methods : 
+\begin{itemize}
+
+    \item \textbf{operandType() :} This method an object of class TypeMapping corresponding to the typeid and the number of pointers in the parameters. For non-predefined classes it appends ‘class.’ to the object id \textbf{[For more info of Typemapping constructors, see the TypeMapping class]}.
+    \item \textbf{attributeAddressOfObj() :} This method returns a string containing the address writing format of IR for a AST.formal list of a method.
+    \item \textbf{returnTypeOfMethod() :} This method returns an object of TypeMapping class corresponding to the return type of method. It takes the typeid of method and method name as one of its parameter. For Object method type, we return TypeMapping object of VOID type, else we call the operandType() method
+    \item \textbf{VisitorPattern() :} This is the driver method of this class, which takes in an expression of and calls the corresponding overloaded VisitNode() method on the typecasted expression, depending on the type of the expression.
+    \item \textbf{VisitNode() :} This method is overloaded for different types of AST.expr. 
+   
+\end{itemize}
+
+The working of VisitNode() method for different types of expressions can be described as written below(Note that there is a separate VisitNode method for each of these expressions):
+\subsubsection{AST.assign :}
+This first calls recursively invokes VisitNode() on the expression that is to be assigned. Then it invokes a method called attributeAddressOfObj() on the attribute or formal to be assigned which returns a string containing the address writing format of IR for a variable. Finally it terminates after invoking PrintUtility::storeInstUtil() to print the store operation in IR.
+
+\subsubsection{AST.static\_dispatch :}
+Here we first recurse on the caller expression if the type of static dispatch is not any of Int, Bool or String. Then, we check for dispatch on void condition and branch the control flow of the IR accordingly.    
+Then we recurse for all the actuals expressions in the dispatch in a loop. After that the call instruction is emitted with the help of PrintUtility::callInstUtil() function. Register count is increased at return operation in case of the return type of the method is not void.
+
+\subsubsection{AST.cond(IF-ELSE) :}
+First of all for handling the nesting of if-else statements we have a static variable that keeps count of the value of nesting to mangle the if-else labels accordingly. In this function we start by recursion on the predicate expression followed by emitting the branching instruction according to the predicate with the help of PrintUtility::brConditionUtil() function. Then we emit label for if.then followed by recursion on the ifbody expression and branching to the if.end label. Same is done for if.else and elsebody. For handling nested if-else we use phi nodes which assigns the register value of else block as either then block minus one or else block minus one depending upon the branching.
+
+\subsubsection{AST.loop(while) :}
+Just like for if-else we keep a variable to keep track of nesting. Whenever this expression is visited we branch to for.cond. Then we visit the predicate expression of the loop and branch accordingly to either for.body or for.end. This is followed by visiting the body expression which is then branched to for.cond to complete the loop. Last label for the loop is for.end which when branched to, executes the IR in its original order after the loop has has ended.
+
+\subsubsection{AST.block :}
+For this we visit all of the expressions in the list in a loop.
+
+\subsubsection{AST.new_ :}
+For this expression we first check if the object being created is of type String, Bool, Int. If it is then we just simply call PrintUtility::allocaInstUtil(), PrintUtility::storeInstUtil() and PrintUtility::loadInstUtil(). Int object is initialized with a value of zero, false for Bool and empty string for String type object. For object of other classes, the constructor of that class is called after performing alloca operation.
+
+\subsubsection{Arithmetic Expressions(+, -, *, /) :}
+The code generating mechanism for all the arithmetic operations is same except for division which is explained. For AST.plus, AST.sub and AST.mul first both the expressions to be added are visited and then PrintUtility::arithmeticUtil() is invoked which emits add, sub, mul operation statements to IR. The only thing different in case of division is that we also have to check whether the divisor is zero or not. If it is zero then we branch to func\_div\_by\_zero\_abort which would print an error message. If it is not zero then we branch to our normal execution.
+
+\subsubsection{Unary Operations(~, not) :}
+For compliment operation(~) we perform xor operation in IR between the expression to be complimented and true with invoking PrintUtility::arithmeticUtil() after visiting the expression to be complimented. For negation(not) we just perform mul operation in IR between the expression to be negated and -1 with invoking PrintUtility::arithmeticUtil() after visiting the expression to be negated.
+
+\subsubsection{AST.object :}
+In this case load operation is performed in the IR which is emitted with the help of PrintUtility::loadInstUtil() for the corresponding type of object.
+
+\subsubsection{Constants(int\_const, string\_const, bool\_const) :}
+In this case we just perform alloca, store and load operations for the corresponding constant on register level. For String constants store operation is performed by using getelementptr inbounds instruction with the corresponding size of the string.
+
+
+\subsection{PrintUtility.java}
+This is a helper class containing methods to print the various possible llvm-IR instructions. Every method prints an IR line for corresponding operations happening in the IR.\\ \\
+This prevents us from writing code for various operations again and again and helps implement code reusability.\\ \\
+This has the following methods :
+\begin{itemize}
+
+    \item \textbf{returnInstUtil() :} Generates IR instruction for return operation in a method.
+    \item \textbf{allocaInstUtil() :} Generates IR instruction for alloca operation for a variable.
+    \item \textbf{loadInstUtil() :} Generates IR instruction for load operation for a variable.
+    \item \textbf{storeInstUtil() :} Generates IR instruction for store operation for a variable.
+    \item \textbf{stringEscUtil() :} Used by stringProcess() method to handle escaped characters in string constants.
+    \item \textbf{generateDefUtil() :} Generates IR instruction for definition of a method.
+    \item \textbf{generateDeclUtil() :} Generates IR instruction for declaration of a method.
+    \item \textbf{arithemeticUtil() :} Generates IR instruction for performing the corresponding arithmetic operation.
+    \item \textbf{cmpInstUtil() :} Generates IR instruction for performing the corresponding comparison instruction.
+    \item \textbf{arithemeticUtil() :} Generates IR instruction for performing the corresponding arithmetic operation.
+    \item \textbf{cmpInstUtil() :} Generates IR instruction for performing the corresponding comparison instruction.
+    \item \textbf{getElemPtrInstUtil() :} Generates IR instruction for getelementptr inbounds operation.
+    \item \textbf{brConditionUtil() :} Generates IR instruction for branching according to the trueness of a given condition.
+    \item \textbf{brUncoditionUtil() :} Generates IR instruction for branching without any condition.
+    \item \textbf{callInstUtil() :} Generates IR instruction for performing the calling of a method.
+    \item \textbf{classTypeUtil() :} Generates IR instruction for declaration of a class.
+    
+\end{itemize}
+
+
+\subsection{ConstValClass.java} 
+This class is a helper class which acts as a superclass for IntValClass and BoolValClass.
+
+
+\subsection{IntValClass.java}
+Utility class for representing operands of type 'Int' inheriting from ConstValClass. It contains a Integer value as member to store the integer value of the operand.
+
+
+\subsection{BoolValClass.java}
+Utility class for representing operands of type 'Bool' inheriting from ConstValClass. It contains a boolean value as member to store the boolean value of the operand.
+
+
+\section{File hierarchy}
+\begin{lstlisting}
+codegen/
+|___src/
+|   |___java/
+|   |   |___cool/
+|   |       |___AST.java
+|   |       |___BasicClassBlock.java
+|   |       |___BuildInheritanceGraph.java
+|   |       |___BuildScopeTable.java
+|   |       |___ClassInfo.java
+|   |       |___ReportError.java
+|   |       |___ScopeTabble.java
+|   |       |___Semantic.java
+|   |       |___VisitorMechanism.java
+|   |       |___CodeGen.java
+|   |       |___ClassInfoCG.java
+|   |       |___TypeMapping.java
+|   |       |___BasicClassBlockCG.java
+|   |       |___InstructionInfo.java
+|   |       |___OpClass.java
+|   |       |___GenerateLlvm.java
+|   |       |___VisitNodeClass.java
+|   |       |___PrintUtility.java
+|   |       |___ConstValClass.java
+|   |       |___BoolValClass.java
+|   |       |___IntValClass.java
+|   |
+|   |___test_cases/
+|       |___Trivial/
+|           |___test1.cl
+|           |___test2.cl
+|           |___test3.cl
+|
+|       |___NonTrivial/
+|           |___test1.cl
+|           |___test2.cl
+|           |___test3.cl
+|
+|___Readme.pdf
+\end{lstlisting}
+\\
+
+\section{Test Cases}
+We have divided the test cases into two categories :
+\begin{itemize}
+    \item \textbf{Trivial: }These are trivial test cases which check for basic expressions like arithmetic, unary and block.  
+    \item \textbf{NonTrivial: }Their description is as follows :
+    \begin{itemize}
+        \item \textbf{test1.cl: }Testing for arithmetic operations along with static dispatch and new expressions.
+        \item \textbf{test2.cl: }Testing for unary operations, string and int constants along with if-else statements, while statement and static dispatch.
+        \item \textbf{test3.cl: }Testing for nested if-else and nested while and string functions. 
+    \end{itemize}
+\end{itemize}
+
+\vspace{300px}
+
+
+\end{document}

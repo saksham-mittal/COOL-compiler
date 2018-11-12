@@ -4,7 +4,7 @@ import java.util.*;
 import java.io.PrintWriter;
 
 /* 
-    Utility class for representing operands of type 'Int' 
+    Utility class for representing operands of type 'Int' inheriting from ConstValClass
     It contains a Integer value as member to store the integer value of the operand
 */
 public class IntValClass extends ConstValClass {

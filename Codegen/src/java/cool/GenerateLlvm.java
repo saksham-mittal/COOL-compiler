@@ -188,6 +188,7 @@ public class GenerateLlvm {
             out.println("\tcall void (i32) @exit(i32 0)");
             out.println("\tret void\n}\n");
         }
+        // Add other object methods later (If time permits)
     }
 
     public void generateIOMethods(PrintWriter out, PrintUtility printUtil, String functionName) {
@@ -561,11 +562,16 @@ public class GenerateLlvm {
                 printUtil.loadInstUtil(out, operandType(cl.name, true, 1), new OpClass(operandType(cl.name, true, 2), "this" + ".addr"), new OpClass(operandType(cl.name, true, 1), "this1"), null);
 
                 for(int i=0; i<currentClass.attrList.size(); i++) {
+                    int flagTemp = 0;
                     for(String elem : functionFormalNameList) {
                         if(elem.equals(currentClass.attrList.get(i).name)) {
-                            continue;
+                            flagTemp = 1;
+                            break;
                         }
                     }
+
+                    if(flagTemp == 1)
+                        continue;
 
                     List<OpClass> opList = new ArrayList<OpClass>();
                     OpClass result = new OpClass(new TypeMapping(TypeMapping.TypeID.INT32), currentClass.attrList.get(i).name);

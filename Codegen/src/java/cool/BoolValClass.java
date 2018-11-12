@@ -4,7 +4,7 @@ import java.util.*;
 import java.io.PrintWriter;
 
 /* 
-    Utility class for representing operands of type 'Bool' 
+    Utility class for representing operands of type 'Bool' inheriting from ConstValClass
     It contains a boolean value as member to store the boolean value of the operand
 */
 public class BoolValClass extends ConstValClass {
